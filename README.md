@@ -10,17 +10,23 @@ What the program does:
 
     Prompt for this: 
     does the following description fit the description "nature". Answer strictly with yes or no: "This image is a close-up of a cat's nose. The focus is on the texture and details of the fur around the nose, which appears to be a mix of gray and white. The fur is soft and fluffy, and the nose itself is a light brown color. The background is blurred, emphasizing the nose as the main subject of the image."
-
-- the categorization happens in folders in the sorting folder specified by the user. This can be either through symlinks to the image input folder, hardlinks or by copying the images into the sorting dirs
-
 ---
 
-## Operation Strategy
+## Definitions
+### Category
+A Category is always the place the original image is moved to.
+An image can only be in one category.
+If there is a conflict, where the image fits in two categories, it will choose according to a categorization_type
+priority list also definable in this configuration file
 
-1. Read config file
-2. 
+### Attributes
+An attribute is simply an attribute of an image.
+It does strictly sort it in one category.
+An image can have multiple attributes assigned with categorization_types.
+In the file system this is just a folder with alot of symlinks to the images
+with that attribute for easy access.
 
-## Program creates the following File structure:
+## File structure:
 
 ```
 - Input
@@ -52,22 +58,6 @@ People_Cache (saves unknown faces in case they appear again)
 - Config.ini (contains attribute and category configuration)
 
 ```
-
-### Definitions
-#### Category
-A Category is always the place the original image is moved to.
-An image can only be in one category.
-If there is a conflict, where the image fits in two categories, it will choose according to a categorization_type
-priority list also definable in this configuration file
-
-#### Attributes
-An attribute is simply an attribute of an image.
-It does strictly sort it in one category.
-An image can have multiple attributes assigned with categorization_types.
-In the file system this is just a folder with alot of symlinks to the images
-with that attribute for easy access.
-
-
 
 ## Config.ini
 
@@ -128,3 +118,38 @@ Attributes follow the same syntax but they can be assigned to multiple images
 - gender_count
 - gender_fraction
 - emotions #angry, fear, neutral, sad, disgust, happy, and surprise with fractions including ">0.5"
+
+## MANDATORY OPTIONS
+- Disable Face recognition
+- Disable face caching
+- Enable noconf mode (no configuration file needed, only description sorting with llms, either with sorting words or auto)
+- single sort mode
+- background sort mode
+- custom names and paths for Input, Sorted, Attributes, People, People_cache
+
+## Operation Strategy
+
+1. Read config file
+2. iterate through Input Folder Files
+    1. generate description
+    2. make sure all folders are present
+    2. sort into Category
+        1. look for everything but desc(also scan for faces and auto cache them if enabled)
+        2. if all are true by just one there
+        3. else make weird algorythm to find out which one to choose
+        4. now let llm choose from all desc_words including "other" for default
+        5. move image to Category folder
+    3. iterate over attributes
+        1. if all requirements are met
+        2. symlink image at attribute folder
+    
+
+
+NO PARALLELISM OR ASYNCRONYSM YET
+
+## Libraries
+- Ollama for LLMs and image description
+- deepface for face detection
+- Pillow for image formatting
+- 
+
