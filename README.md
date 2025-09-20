@@ -26,6 +26,7 @@ What the program does:
 - Input
    - Image 5.jpg(being processed or is in queue until its moved to its sorted category)
 - Sorted
+    - default
     - Category 1
         - Image 1.jpg(contains descr. and specific face recognition data in description metadata)
         - Image 4.jpg
