@@ -1,3 +1,11 @@
+# Private test pics
+test/Input/
+test/Sorted/
+test/Attributes/
+test/People/
+test/People_cache/
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
