@@ -14,6 +14,7 @@ class ValidArgs(Enum):
     monitor_mode = ("m", "", "binary")
     no_face_caching = ("nfc", "", "binary")
     no_face_recognition = ("nfr", "", "binary")
+    no_auto_convert = ("nac", "", "binary")
 
     #noconf_mode = "noconf", ""
     #noconf_auto_word_count = "nawc", "5, "number""
