@@ -66,7 +66,7 @@ def main():
     parser = build_parser()
     args = parser.parse_args()
 
-    # config file
+    # get config file
     config = configparser.ConfigParser()
     successfull_reads = config.read(args.config_location)
     if not successfull_reads:
@@ -86,7 +86,7 @@ def main():
         os.makedirs(folder, exist_ok=True)
     logger.debug("all folders created or existed already")
 
-    # collect images
+    # sort images into jpeg and non-jpeg
     input_folder = Path(args.input_location)
     jpegs: list[Path] = []
     non_jpegs: list[Path] = []
@@ -110,6 +110,7 @@ def main():
     image_queue = jpegs.copy()
     logger.debug("added jpegs to queue")
 
+    # convert images if needed
     if not args.no_auto_convert:
         logger.info(f"converting {non_jpeg_amount} non jpeg images to jpeg")
         for index, ip in enumerate(non_jpegs):
