@@ -1,19 +1,12 @@
 import argparse
-import configparser
+#import configparser
 import os
 from pathlib import Path
 from PIL import Image
 
-import logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    handlers=[
-        #logging.FileHandler("app.log"),  # log to file
-        logging.StreamHandler()          # log to console
-    ]
-)
-logger = logging.getLogger(__name__)
+from configuration import get_and_validate_config
+
+from logger import logger
 
 #import asyncio
 #from concurrent.futures import ThreadPoolExecutor
@@ -53,26 +46,21 @@ def build_parser() -> argparse.ArgumentParser:
 
     return parser
 
-
 def validate_image(img: Image.Image) -> bool:
     try:
         img.verify()
         return True
     except Exception:
         return False
+    
+    
 
 
 def main():
     parser = build_parser()
     args = parser.parse_args()
 
-    # get config file
-    config = configparser.ConfigParser()
-    successfull_reads = config.read(args.config_location)
-    if not successfull_reads:
-        logger.critical("Failed to read config file")
-        raise FileNotFoundError(f"Failed to read config file: {args.config_location}")
-    logger.debug("read config")
+    config = get_and_validate_config(args.config_location)
 
     # prepare folders
     folders = [
@@ -121,6 +109,10 @@ def main():
                 ip.unlink(missing_ok=True)
                 image_queue.append(new_path)
                 logger.info(f"converted {index+1}/{non_jpeg_amount} non-jpegs to jpeg")
+
+#    for image in image_queue:
+#        for category in config["Categories"]["category"]:
+
 
 
     

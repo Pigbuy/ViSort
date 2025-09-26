@@ -72,18 +72,18 @@ category = Group Selfie with the homies  # Images fitting description and multip
 category = default                       # automatically generated, overflow, does not need configuration
 
 [Norway Trip]
-categorization_type = date
+filter_type = date
 start_date = DD.MM.YYYY
 start_time = XX:XX
 end_date = DD.MM.YYYY
 end_time = XX:XX
 
 [Nature]
-categorization_type = desc_word # use "desc" for more specific description
+filter_type = desc_word # use "desc" for more specific description
 desc = nature
 
 [At work]
-categorization_type = location
+filter_type = location
 Country = Germany
 city = Berlin
 Address = 14 Main str
@@ -91,20 +91,21 @@ Coordinates = 52.5200, 13.4050 # alternatively use coordinates
 radius = 1000 # radius in m, the address is counted as at that location
 
 [Norwegian Sheep]
-categorization_type = location, desc_word
+filter_type = location, desc_word
 Country = Norway
 desc = sheep
 
 [Selfie]
-categorizatin_type = desc_word, people
+filter_type = desc_word, people
 person = Me
 desc = selfie
 
 ```
 Attributes follow the same syntax but they can be assigned to multiple images
 
-### Categorization Type List
+### Filter Type List
 - location
+- coords
 - desc
 - desc_word
 - people
@@ -153,3 +154,16 @@ NO PARALLELISM OR ASYNCRONYSM YET
 - Pillow for image formatting
 - 
 
+# Dependencies so far:
+- portion
+- Pillow
+- geopy
+
+# future Dependencies
+- ollama
+- deepface
+
+# Implemented so far:
+- argument reading
+- picture conversion to jpeg
+- auto path creation
