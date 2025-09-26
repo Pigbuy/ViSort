@@ -28,7 +28,7 @@ class Location(FilterArgType):
     def are_coords_in_same_smallest_region(self, coords:tuple[float,float]) -> bool:
         addr = getattr(self.location, 'raw', {}).get('address', {})
         coord_addr = getattr(geolocator.reverse(coords, addressdetails=True, exactly_one=True, language="en"), 'raw', {}).get('address', {})
-        for key in ['country', 'state', 'region', 'county', 'municipality', 'city', 'town', 'village']:
+        for key in ['country', 'state', 'region', 'county', 'municipality', 'city', 'town', 'village', 'suburb', 'neighbourhood', 'hamlet', 'locality']:
             val1 = addr.get(key, "").lower()
             val2 = coord_addr.get(key, "").lower()
 
