@@ -5,6 +5,9 @@ test/Attributes/
 test/People/
 test/People_cache/
 
+# stupid
+lib64
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
