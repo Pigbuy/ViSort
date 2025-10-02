@@ -1,13 +1,14 @@
 # Private test pics
-test/Input/
-test/Sorted/
-test/Attributes/
-test/People/
-test/People_cache/
+test/Input/*
+test/Sorted/*
+test/Attributes/*
+test/People/*
+test/People_cache/*
 
 # stupid
+bin
+pyvenv.cfg
 lib64
-
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
