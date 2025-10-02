@@ -1,15 +1,14 @@
 import argparse
-#import configparser
 import os
 from pathlib import Path
 from PIL import Image
+import threading
+from queue import Queue
+from typing import List
 
 from configuration import get_and_validate_config
-
 from logger import logger
 
-#import asyncio
-#from concurrent.futures import ThreadPoolExecutor
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Image processing pipeline")
@@ -95,20 +94,42 @@ def main():
     non_jpeg_amount = len(non_jpegs)
     logger.info(f"found {non_jpeg_amount} non-jpeg images")
 
-    image_queue = jpegs.copy()
+    # Create thread-safe queue for images and conversion status flag
+    image_queue: Queue[Path] = Queue()
+    conversion_complete = threading.Event()
+    
+    # Add all JPEGs to the queue first
+    for jpeg in jpegs:
+        image_queue.put(jpeg)
     logger.debug("added jpegs to queue")
 
-    # convert images if needed
-    if not args.no_auto_convert:
-        logger.info(f"converting {non_jpeg_amount} non jpeg images to jpeg")
-        for index, ip in enumerate(non_jpegs):
-            with Image.open(ip) as oi:
-                ci = oi.convert("RGB")
-                new_path = ip.with_suffix(".jpg")
-                ci.save(new_path, "JPEG")
-                ip.unlink(missing_ok=True)
-                image_queue.append(new_path)
-                logger.info(f"converted {index+1}/{non_jpeg_amount} non-jpegs to jpeg")
+    # Handle image conversion in a separate thread if needed
+    if not args.no_auto_convert and non_jpeg_amount > 0:
+        def convert_images(non_jpeg_paths: List[Path], queue: Queue[Path]):
+            logger.info(f"converting {len(non_jpeg_paths)} non jpeg images to jpeg")
+            for index, ip in enumerate(non_jpeg_paths):
+                try:
+                    with Image.open(ip) as oi:
+                        ci = oi.convert("RGB")
+                        new_path = ip.with_suffix(".jpg")
+                        ci.save(new_path, "JPEG")
+                        ip.unlink(missing_ok=True)
+                        queue.put(new_path)
+                        logger.info(f"converted {index+1}/{non_jpeg_amount} non-jpegs to jpeg")
+                except Exception as e:
+                    logger.error(f"Failed to convert {ip}: {str(e)}")
+            conversion_complete.set()
+            logger.info("Image conversion completed")
+
+        conversion_thread = threading.Thread(
+            target=convert_images, 
+            args=(non_jpegs, image_queue),
+            name="ImageConverter"
+        )
+        conversion_thread.start()
+    else:
+        logger.info("all images are already jpegs, no conversion needed")
+        conversion_complete.set()
 
 #    for image in image_queue:
 #        for category in config["Categories"]["category"]:
