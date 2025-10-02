@@ -1,4 +1,4 @@
-#!/home/felix/Documents/Programming/ViSort/bin/python
+#!/home/felix/Coding/Python/ViSort/bin/python
 import sys
 from markdown_it.cli.parse import main
 if __name__ == '__main__':
