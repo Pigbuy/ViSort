@@ -46,6 +46,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     return parser
 
+args = build_parser().parse_args()
+
 def validate_image(img: Image.Image) -> bool:
     try:
         img.verify()
@@ -57,9 +59,7 @@ def validate_image(img: Image.Image) -> bool:
 
 
 def main():
-    parser = build_parser()
-    args = parser.parse_args()
-
+    
     config = get_and_validate_config(args.config_location)
 
     # prepare folders
