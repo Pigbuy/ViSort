@@ -1,11 +1,8 @@
 from pathlib import Path
 import configparser
-import logging
 
 from logger import logger
 #from filter_types.filter_types import FilterTypes
-
-from enum import Enum
 
 def get_and_validate_config(c_location:Path) -> configparser.ConfigParser:
 
