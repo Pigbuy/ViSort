@@ -5,6 +5,7 @@ from PIL import Image
 import threading
 from queue import Queue
 from typing import List
+import time
 
 from configuration import get_and_validate_config
 from logger import logger
@@ -133,9 +134,16 @@ def main():
 
 #    for image in image_queue:
 #        for category in config["Categories"]["category"]:
-
-
-
+#    while True:
+#        try:
+#            image_path = image_queue.get_nowait()
+#            # Process the image
+#            image_queue.task_done()
+#        except Queue.Empty:
+#            if conversion_complete.is_set():
+#                break  # No more images will be added
+#            # Queue is temporarily empty but more images might come
+#            time.sleep(0.1)  # Wait a bit before checking again
     
 
 
