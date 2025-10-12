@@ -7,7 +7,7 @@ class Text(FilterArgType):
     def validate_str(string: str) -> bool:
         return isinstance(string, str) and len(string.strip()) > 0
 
-    def parse_valid_string(self, valid_string: str) -> "Text":
+    def parse_valid_string(self, valid_string) -> "Text":
         self.text = valid_string.strip()
         return self
 

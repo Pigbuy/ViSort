@@ -21,7 +21,7 @@ class Location(FilterArgType):
         return True
         
     
-    def parse_valid_string(self, valid_string:str) -> "Location":
+    def parse_valid_string(self, valid_string) -> "Location":
         self.location = geolocator.geocode(valid_string, addressdetails=True, exactly_one=True, language="en")
         return self
 
