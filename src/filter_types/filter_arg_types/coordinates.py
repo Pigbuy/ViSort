@@ -15,7 +15,7 @@ class Coordinates(FilterArgType):
         except ValueError:
             return False
 
-    def parse_valid_string(self, valid_string:str) -> "FilterArgType":
+    def parse_valid_string(self, valid_string:str) -> "Coordinates":
         parts = valid_string.split(',')
         lat, lon = parts
         self.coordinates = ( float(lat.strip()), float(lon.strip()) )
