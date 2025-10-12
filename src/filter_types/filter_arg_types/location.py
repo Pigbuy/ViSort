@@ -28,12 +28,22 @@ class Location(FilterArgType):
     def are_coords_in_same_smallest_region(self, coords:tuple[float,float]) -> bool:
         addr = getattr(self.location, 'raw', {}).get('address', {})
         coord_addr = getattr(geolocator.reverse(coords, addressdetails=True, exactly_one=True, language="en"), 'raw', {}).get('address', {})
+        print(addr)
+        print(coord_addr)
+        one_common = False
         for key in ['country', 'state', 'region', 'county', 'municipality', 'city', 'town', 'village', 'suburb', 'neighbourhood', 'hamlet', 'locality']:
-            val1 = addr.get(key, "").lower()
-            val2 = coord_addr.get(key, "").lower()
+            val1: str = addr.get(key, "").lower()
+            val2: str = coord_addr.get(key, "").lower()
 
-            if val1 != val2:
-                return False
+            if key in addr and key in coord_addr:
+                one_common = True
+                if val1 != val2:
+                    return False
+            # if both locations have no key in common return False
+            else:
+                if key == 'locality' and one_common == False:
+                    return False
+        
         return True
 
     def get_dist_to(self, coords) -> float:
