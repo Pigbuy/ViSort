@@ -1,5 +1,5 @@
 from enum import Enum
-
+from filter_type import FilterType
 from average_age import AverageAge
 from coords import Coords
 from date import Date
@@ -11,12 +11,7 @@ from location import Location
 from people_count import PeopleCount
 from people import People
 
-class Text():
-    @staticmethod
-    def validate():
-        pass
-        
-
+from typing import Type
 
 class FilterTypes(Enum):
     location = Location
@@ -29,3 +24,8 @@ class FilterTypes(Enum):
     average_age = AverageAge
     gender_count = GenderCount
     gender_fraction = GenderFraction
+
+    def __init__(self, filter_type: Type) -> None:
+        self.filter_type: Type[FilterType] = filter_type
+
+FilterTypes["location"].filter_type
