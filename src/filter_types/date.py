@@ -1,4 +1,5 @@
-class Date:
+from filter_types.filter_type import FilterType
+class Date(FilterType):
     def __init__(self, start_date: str, end_date: str, start_time: str, end_time: str) -> None:
         self.start_date = start_date
         self.end_date = end_date

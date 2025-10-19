@@ -1,4 +1,5 @@
-class KnownPeopleCount:
+from filter_types.filter_type import FilterType
+class KnownPeopleCount(FilterType):
     def __init__(self, known_people_count: int) -> None:
         self.known_people_count = known_people_count
 

@@ -1,5 +1,5 @@
-
-class Location():
+from filter_types.filter_type import FilterType
+class Location(FilterType):
     class FilterArgs():
 
     def __init__(self, country:str, city:str, address:str, radius:int) -> None:
