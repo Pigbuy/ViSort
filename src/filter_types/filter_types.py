@@ -27,5 +27,3 @@ class FilterTypes(Enum):
 
     def __init__(self, filter_type: Type) -> None:
         self.filter_type: Type[FilterType] = filter_type
-
-FilterTypes["location"].filter_type
