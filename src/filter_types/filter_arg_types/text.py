@@ -1,5 +1,4 @@
 from filter_types.filter_arg_types.filter_arg_type import FilterArgType
-from typing import Optional
 
 
 class Text(FilterArgType):

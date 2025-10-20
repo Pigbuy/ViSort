@@ -1,8 +1,6 @@
 from filter_types.filter_arg_types.filter_arg_type import FilterArgType
 from datetime import datetime
 from dateutil import parser
-from logger import logger
-from typing import Optional
 
 
 class DateTime(FilterArgType):

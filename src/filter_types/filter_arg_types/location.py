@@ -1,5 +1,4 @@
 from filter_types.filter_arg_types.filter_arg_type import FilterArgType
-from logger import logger
 from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut
 from geopy import distance

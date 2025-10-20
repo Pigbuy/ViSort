@@ -1,23 +1,24 @@
 from enum import Enum
-from filter_type import FilterType
-from average_age import AverageAge
-from coords import Coords
-from date import Date
-from descripion import Description
-from gender_count import GenderCount
-from gender_fraction import GenderFraction
-from known_people_count import KnownPeopleCount
-from location import Location
-from people_count import PeopleCount
-from people import People
-
 from typing import Type
+
+from filter_types.filter_type import FilterType
+from filter_types.average_age import AverageAge
+from filter_types.coords import Coords
+from filter_types.time_intervals import TimeIntervals
+from filter_types.descripion import Description
+from filter_types.gender_count import GenderCount
+from filter_types.gender_fraction import GenderFraction
+from filter_types.known_people_count import KnownPeopleCount
+from filter_types.location import Location
+from filter_types.people_count import PeopleCount
+from filter_types.people import People
+
 
 class FilterTypes(Enum):
     location = Location
     coords = Coords
     desc = Description
-    date = Date
+    date = TimeIntervals
     people = People
     people_count = PeopleCount
     known_people_count = KnownPeopleCount
