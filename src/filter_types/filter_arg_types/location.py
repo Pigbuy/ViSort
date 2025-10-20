@@ -18,7 +18,7 @@ class Location(FilterArgType):
         return ""
         
     @staticmethod
-    def from_valid_string(valid_string) -> "Location":
+    def from_valid_str(valid_string) -> "Location":
         return Location(geolocator.geocode(valid_string, addressdetails=True, exactly_one=True, language="en"))
 
     def are_coords_in_same_smallest_region(self, coords:tuple[float,float]) -> bool:

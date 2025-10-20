@@ -9,7 +9,7 @@ class Text(FilterArgType):
         else:
             return "how did you even get this error wtf"
     @staticmethod
-    def from_valid_string(valid_string) -> "Text":
+    def from_valid_str(valid_string) -> "Text":
         return Text(valid_string.strip())
 
     def __init__(self, text: str) -> None:

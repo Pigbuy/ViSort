@@ -19,7 +19,7 @@ class Coordinates(FilterArgType):
             return "unexpected character in coordinates"
         
     @staticmethod
-    def from_valid_string(valid_string) -> "Coordinates":
+    def from_valid_str(valid_string) -> "Coordinates":
         parts = valid_string.split(',')
         lat, lon = parts
         return Coordinates( ( float(lat.strip()), float(lon.strip()) ) )

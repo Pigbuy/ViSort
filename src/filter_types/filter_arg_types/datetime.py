@@ -23,7 +23,7 @@ class DateTime(FilterArgType):
             return "wrong date formatting"
         
     @staticmethod
-    def from_valid_string(valid_string: str) -> "DateTime":
+    def from_valid_str(valid_string: str) -> "DateTime":
         return DateTime(parser.parse(valid_string))
 
     def __init__(self, dt: datetime) -> None:

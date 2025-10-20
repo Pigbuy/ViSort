@@ -20,7 +20,7 @@ class People(FilterArgType):
                 return "couldn't find person in people folder"
         return ""
     @staticmethod
-    def from_valid_string(valid_string) -> "People":
+    def from_valid_str(valid_string) -> "People":
         return People(tuple (valid_string.split(",")))
     
     def __init__(self, people:tuple[str, ...]) -> None:
