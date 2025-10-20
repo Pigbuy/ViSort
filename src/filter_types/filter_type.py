@@ -12,5 +12,5 @@ class FilterType():
     def __init__(self) -> None:
         pass
     
-    def validate(self) -> bool: return True
+    def is_valid(self) -> str: return "error"
     def filter(self, image) -> bool: return True
