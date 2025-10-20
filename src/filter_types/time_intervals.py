@@ -1,6 +1,7 @@
 from filter_types.filter_type import FilterType, FilterArgType, Type, Enum
 from filter_types.filter_arg_types.filter_arg_types import FilterArgTypes
 from logger import logger
+
 class TimeIntervals(FilterType):
 
     class Args(FilterType.Args, Enum):
@@ -11,9 +12,10 @@ class TimeIntervals(FilterType):
 
     def __init__(self, start_dt: str, end_dt:str) -> None:
         # split if multiple DateTimes are used
-        self.start_dt, self.end_dt = start_dt.split(","), end_dt.split(",")
-        
+        sdts, edts = start_dt.split(","), end_dt.split(",")
 
+        self.start_dt, self.end_dt = [], []
+        for sdt in sdts
 
     def filter(self, image) -> bool:
         pass
