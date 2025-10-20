@@ -12,5 +12,6 @@ class FilterType():
     def __init__(self) -> None:
         pass
     
-    def is_valid(self) -> str: return "error"
+    @staticmethod
+    def validate_str_args() -> str: return ""
     def filter(self, image) -> bool: return True
