@@ -1,13 +1,19 @@
-from filter_types.filter_type import FilterType
+from filter_types.filter_type import FilterType, FilterArgType, Type, Enum
+from filter_types.filter_arg_types.filter_arg_types import FilterArgTypes
+from logger import logger
 class Date(FilterType):
-    def __init__(self, start_date: str, end_date: str, start_time: str, end_time: str) -> None:
-        self.start_date = start_date
-        self.end_date = end_date
-        self.start_time = start_time
-        self.end_time = end_time
 
-    def validate(self) -> bool:
-        pass
+    class Args(FilterType.Args, Enum):
+        start_dt = FilterArgTypes.DateTime.arg_type
+        end_dt = FilterArgTypes.DateTime.arg_type
+        def __init__(self, arg_type: Type) -> None:
+            self.arg_type: Type[FilterArgType] = arg_type
+
+    def __init__(self, start_dt: str, end_dt:str) -> None:
+        # split if multiple DateTimes are used
+        self.start_dt, self.end_dt = start_dt.split(","), end_dt.split(",")
+        
+
 
     def filter(self, image) -> bool:
         pass
