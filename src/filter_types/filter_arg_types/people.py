@@ -5,7 +5,7 @@ from filter_types.filter_arg_types.filter_arg_type import FilterArgType
 
 class People(FilterArgType):
     @staticmethod
-    def validate_str(string:str) -> bool:
+    def validate_str(string:str) -> str:
         people_path:Path =  Path(args.faces_location)
         valid_people: list[str] = []
         for f in people_path.iterdir():
@@ -17,12 +17,11 @@ class People(FilterArgType):
         people_to_check = string.split(",")
         for person in people_to_check:
             if person not in valid_people:
-                return False
-        return True
+                return "couldn't find person in people folder"
+        return ""
+    @staticmethod
+    def from_valid_string(valid_string) -> "People":
+        return People(tuple (valid_string.split(",")))
     
-    def parse_valid_string(self, valid_string) -> "FilterArgType":
-        self.people = valid_string.split(",")
-        return self
-    
-    def __init__(self, people:tuple[str]) -> None:
+    def __init__(self, people:tuple[str, ...]) -> None:
         self.people = people

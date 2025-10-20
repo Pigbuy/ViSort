@@ -7,7 +7,7 @@ from typing import Optional
 
 class DateTime(FilterArgType):
     @staticmethod
-    def validate_str(string: str) -> bool:
+    def validate_str(string: str) -> str:
         """
         Validates if the input string can be parsed as a datetime.
         Accepts various formats like:
@@ -20,16 +20,15 @@ class DateTime(FilterArgType):
         """
         try:
             parser.parse(string)
-            return True
+            return ""
         except (ValueError, TypeError):
-            logger.critical(f"Invalid date format: {string}")
-            return False
+            return "wrong date formatting"
+        
+    @staticmethod
+    def from_valid_string(valid_string: str) -> "DateTime":
+        return DateTime(parser.parse(valid_string))
 
-    def parse_valid_string(self, valid_string: str) -> "DateTime":
-        self.datetime = parser.parse(valid_string)
-        return self
-
-    def __init__(self, dt: Optional[datetime] = None) -> None:
+    def __init__(self, dt: datetime) -> None:
         self.datetime = dt
 
     def is_before(self, other_dt: datetime) -> bool:

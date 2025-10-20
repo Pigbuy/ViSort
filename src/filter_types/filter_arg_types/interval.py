@@ -4,7 +4,7 @@ import portion as P
 
 class Interval(FilterArgType):
     @staticmethod
-    def validate_str(string:str) -> bool:
+    def validate_str(string:str) -> str:
         string = string.replace(" ","").replace("\t", "").replace("\n", "")
         pattern = re.compile(
             r"""^(
@@ -20,18 +20,18 @@ class Interval(FilterArgType):
 
         match = pattern.match(string)
         if not match:
-            return False
+            return "invalid interval format"
 
         # ensure a < b with "a-b"
         if "-" in string and not string.startswith(("<", ">", "<=", ">=")):
             try:
                 a, b = string.split("-")
                 if float(a) >= float(b):
-                    return False
+                    return "when handling explicit ranges, the first number must be smaller than the second, it isn't"
             except ValueError:
-                return False
+                return "idk how this happened, but your interval format is just wrong"
 
-        return True
+        return ""
 
     def parse_valid_string(self, valid_string:str) -> None:
 

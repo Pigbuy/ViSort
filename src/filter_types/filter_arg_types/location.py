@@ -9,21 +9,18 @@ geolocator = Nominatim(user_agent="geo_check")
 
 class Location(FilterArgType):
     @staticmethod
-    def validate_str(string:str) -> bool:
+    def validate_str(string:str) -> str:
         try:
             loc = geolocator.geocode(string, addressdetails=True, exactly_one=True, language="en")
             if not loc:
-                logger.critical("Wth did you type in the location field lol. It's garbage. Try again")
-                return False
+                return "Wth did you type in the location field lol. It's garbage. Try again"
         except GeocoderTimedOut:
-            logger.critical("Timed out while geocoding, check your internet")
-            return False
-        return True
+            return "Timed out while geocoding, check your internet"
+        return ""
         
-    
-    def parse_valid_string(self, valid_string) -> "Location":
-        self.location = geolocator.geocode(valid_string, addressdetails=True, exactly_one=True, language="en")
-        return self
+    @staticmethod
+    def from_valid_string(valid_string) -> "Location":
+        return Location(geolocator.geocode(valid_string, addressdetails=True, exactly_one=True, language="en"))
 
     def are_coords_in_same_smallest_region(self, coords:tuple[float,float]) -> bool:
         addr = getattr(self.location, 'raw', {}).get('address', {})
@@ -50,5 +47,5 @@ class Location(FilterArgType):
         self_coords = (getattr(self.location, 'latitude', None), getattr(self.location, 'longitude', None))
         return distance.distance(self_coords, coords).km
     
-    def __init__(self, location=None) -> None:
+    def __init__(self, location) -> None:
         self.location = location
