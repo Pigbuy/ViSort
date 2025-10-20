@@ -14,4 +14,6 @@ class FilterType():
     
     @staticmethod
     def validate_str_args() -> str: return ""
-    def filter(self, image) -> bool: return True
+    def filter(self, image) -> bool:
+        """checks if the image complies with the filter"""
+        return True
