@@ -1,4 +1,5 @@
 from filter_types.filter_arg_types.filter_arg_type import FilterArgType
+from filter_types.filter_arg_types.filter_arg_types import register
 from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut
 from geopy import distance
@@ -6,11 +7,13 @@ from geopy import distance
 
 geolocator = Nominatim(user_agent="geo_check")
 
+@register("location")
 class Location(FilterArgType):
     @staticmethod
     def validate_str(string:str) -> str:
         try:
-            loc = geolocator.geocode(string, addressdetails=True, exactly_one=True, language="en")
+            # geopy stubs may have a different signature; ignore typing here
+            loc = geolocator.geocode(string, addressdetails=True, exactly_one=True, language="en")  # type: ignore[arg-type]
             if not loc:
                 return "Wth did you type in the location field lol. It's garbage. Try again"
         except GeocoderTimedOut:
@@ -19,11 +22,13 @@ class Location(FilterArgType):
         
     @staticmethod
     def from_valid_str(valid_string) -> "Location":
-        return Location(geolocator.geocode(valid_string, addressdetails=True, exactly_one=True, language="en"))
+        # geopy stubs may have a different signature; ignore typing here
+        return Location(geolocator.geocode(valid_string, addressdetails=True, exactly_one=True, language="en"))  # type: ignore[arg-type]
 
     def are_coords_in_same_smallest_region(self, coords:tuple[float,float]) -> bool:
         addr = getattr(self.location, 'raw', {}).get('address', {})
-        coord_addr = getattr(geolocator.reverse(coords, addressdetails=True, exactly_one=True, language="en"), 'raw', {}).get('address', {})
+        # geopy stubs may have a different signature; ignore typing here
+        coord_addr = getattr(geolocator.reverse(coords, addressdetails=True, exactly_one=True, language="en"), 'raw', {}).get('address', {})  # type: ignore[arg-type]
         print(addr)
         print(coord_addr)
         one_common = False

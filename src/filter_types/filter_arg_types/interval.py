@@ -1,7 +1,9 @@
 from filter_types.filter_arg_types.filter_arg_type import FilterArgType
+from filter_types.filter_arg_types.filter_arg_types import register
 import re
 import portion as P
 
+@register("interval")
 class Interval(FilterArgType):
     @staticmethod
     def validate_str(string:str) -> str:

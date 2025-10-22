@@ -1,22 +1,16 @@
-from enum import Enum
+from typing import Type, Dict, Callable
+
 from filter_types.filter_arg_types.filter_arg_type import FilterArgType
-from filter_types.filter_arg_types.coordinates import Coordinates
-from filter_types.filter_arg_types.datetime import DateTime
-from filter_types.filter_arg_types.interval import Interval
-from filter_types.filter_arg_types.location import Location
-from filter_types.filter_arg_types.text import Text
-from filter_types.filter_arg_types.people import People
 
-from typing import Type
+# Runtime registry for FilterArgType subclasses. Modules should call
+# `register("name")(Cls)` (or use the decorator) to register arg types.
+REGISTRY: Dict[str, Type[FilterArgType]] = {}
 
+def register(name: str) -> Callable[[Type[FilterArgType]], Type[FilterArgType]]:
+    def decorator(cls: Type[FilterArgType]) -> Type[FilterArgType]:
+        REGISTRY[name] = cls
+        return cls
+    return decorator
 
-class FilterArgTypes(Enum):
-    Coordinates = Coordinates
-    DateTime = DateTime
-    Interval = Interval
-    Location = Location
-    Text = Text
-    People = People
-
-    def __init__(self, arg_type: Type) -> None:
-            self.arg_type: Type[FilterArgType] = arg_type
+def get(name: str) -> Type[FilterArgType]:
+    return REGISTRY[name]

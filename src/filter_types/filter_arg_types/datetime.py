@@ -1,8 +1,10 @@
 from filter_types.filter_arg_types.filter_arg_type import FilterArgType
+from filter_types.filter_arg_types.filter_arg_types import register
 from datetime import datetime
 from dateutil import parser
 
 
+@register("datetime")
 class DateTime(FilterArgType):
     @staticmethod
     def validate_str(string: str) -> str:
@@ -28,6 +30,11 @@ class DateTime(FilterArgType):
 
     def __init__(self, dt: datetime) -> None:
         self.datetime = dt
+
+    @property
+    def dt(self) -> datetime:
+        """Compatibility property expected by filters: returns underlying datetime."""
+        return self.datetime
 
     def is_before(self, other_dt: datetime) -> bool:
         return bool(self.datetime and other_dt and self.datetime < other_dt)

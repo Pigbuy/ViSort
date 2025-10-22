@@ -1,6 +1,8 @@
 from filter_types.filter_arg_types.filter_arg_type import FilterArgType
+from filter_types.filter_arg_types.filter_arg_types import register
 
 
+@register("text")
 class Text(FilterArgType):
     @staticmethod
     def validate_str(string: str) -> str:
