@@ -50,4 +50,4 @@ class ViSortError(Exception):
 #############
 ##  Usage  ##
 #############
-raise ViSortError(Errors.SetupError.MoreTests, lol= "nononono") # type: ignore[arg-type]
+#raise ViSortError(Errors.SetupError.MoreTests, lol= "nononono") # type: ignore[arg-type]
