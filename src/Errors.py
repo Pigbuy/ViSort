@@ -19,7 +19,7 @@ class TreeBase(Enum):
 
     def __init__(self, node: ErrMsg):
         parts = self.__class__.__qualname__.split(".")
-        if parts and parts[0] == "Tree":
+        if parts:
             parts = parts[1:]
         parts = [p for p in parts] + [self.name]
         self._path_ = ".".join(parts)
@@ -50,4 +50,4 @@ class ViSortError(Exception):
 #############
 ##  Usage  ##
 #############
-#raise ViSortError(Errors.SetupError.MoreTests, lol= "nononono") # type: ignore[arg-type]
+raise ViSortError(Errors.SetupError.MoreTests, lol= "nononono") # type: ignore[arg-type]
