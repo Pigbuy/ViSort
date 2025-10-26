@@ -43,11 +43,11 @@ class Errors:
 ##################
     
 class ViSortError(Exception):
-    def __init__(self, type:type[TreeBase], **params:str) -> None:
-        super().__init__(f"{type.get_path()}: {type.msg.message(**params)}") # type: ignore[arg-type]
+    def __init__(self, type:TreeBase, **params:str) -> None:
+        super().__init__(f"{type.get_path()}: {type.msg.message(**params)}")
 
 
 #############
 ##  Usage  ##
 #############
-#raise ViSortError(Errors.SetupError.MoreTests, lol= "nononono") # type: ignore[arg-type]
+#raise ViSortError(Errors.SetupError.MoreTests, lol= "nononono")
