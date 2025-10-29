@@ -11,6 +11,3 @@ def register(name: str) -> Callable[[Type[FilterArgType]], Type[FilterArgType]]:
         REGISTRY[name] = cls
         return cls
     return decorator
-
-def get(name: str) -> Type[FilterArgType]:
-    return REGISTRY[name]
