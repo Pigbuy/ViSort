@@ -26,11 +26,14 @@ class Location(FilterArgType):
         return Location(geolocator.geocode(valid_string, addressdetails=True, exactly_one=True, language="en"))  # type: ignore[arg-type]
 
     def are_coords_in_same_smallest_region(self, coords:tuple[float,float]) -> bool:
+        """returns True if the given coordinates are in the same smallest specified region.
+        For example if the location is \"Bergen, Norway\", and the coordinates are in Bergen it will return true.
+        This works for countries, states, regions, municipalities, cities, towns, villages, suburbs, neighbourhoods, hamlets and localities"""
         addr = getattr(self.location, 'raw', {}).get('address', {})
         # geopy stubs may have a different signature; ignore typing here
         coord_addr = getattr(geolocator.reverse(coords, addressdetails=True, exactly_one=True, language="en"), 'raw', {}).get('address', {})  # type: ignore[arg-type]
-        print(addr)
-        print(coord_addr)
+        #print(addr)
+        #print(coord_addr) #debug stuff
         one_common = False
         for key in ['country', 'state', 'region', 'county', 'municipality', 'city', 'town', 'village', 'suburb', 'neighbourhood', 'hamlet', 'locality']:
             val1: str = addr.get(key, "").lower()
