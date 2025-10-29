@@ -34,6 +34,7 @@ class TreeBase(Enum):
 class Errors:
     class SetupError(TreeBase):
         MoreTests = ErrMsg("another test error {lol}")
+        """takes parameter \"lol\""""
     class ConfigurationError(TreeBase):
         TestAgain = ErrMsg("another test error {lol}")
     class ProgramLoopError(TreeBase):
