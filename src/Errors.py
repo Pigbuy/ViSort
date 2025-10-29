@@ -46,6 +46,7 @@ class Errors:
 QUEUED_ERROR_MSGS:list[str] = []
 
 class ViSortError(Exception):
+    """class that makes usage of custom ViSort Errors defined in Error Tree possible"""
     def __init__(self, type:TreeBase, **params:str) -> None:
         if type != Errors.Other.QueuedErrors:
             super().__init__(f"{type.get_path()}: {type.msg.message(**params)}")
@@ -56,8 +57,14 @@ class ViSortError(Exception):
             super().__init__(msg)
 
     @staticmethod
-    def queue_error(type:TreeBase, **params:str):
+    def queue_error(type:TreeBase, **params:str) -> TreeBase:
+        """Instead of creating an exception that can be raised, just make the error message
+        and queue the error in the error queue. Then just raise the Errors.Other.QueuedErrors Error
+        like this:
+        `raise ViSortError(Errors.Other.QueuedErrors)`
+        This function also returns its error type so it can be passed on to preceding functions."""
         QUEUED_ERROR_MSGS.append(f"{type.get_path()}: {type.msg.message(**params)}")
+        return type
 
 
 
