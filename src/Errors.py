@@ -38,12 +38,27 @@ class Errors:
         TestAgain = ErrMsg("another test error {lol}")
     class ProgramLoopError(TreeBase):
         TestError = ErrMsg("testdasdf{lol}")
+    class Other(TreeBase):
+        QueuedErrors = ErrMsg("")
 
 ##################
-    
+
+QUEUED_ERROR_MSGS:list[str] = []
+
 class ViSortError(Exception):
     def __init__(self, type:TreeBase, **params:str) -> None:
-        super().__init__(f"{type.get_path()}: {type.msg.message(**params)}")
+        if type != Errors.Other.QueuedErrors:
+            super().__init__(f"{type.get_path()}: {type.msg.message(**params)}")
+        else:
+            msg = "multiple errors:\n"
+            for m in QUEUED_ERROR_MSGS:
+                msg = msg + m + "\n"
+            super().__init__(msg)
+
+    @staticmethod
+    def queue_error(type:TreeBase, **params:str):
+        QUEUED_ERROR_MSGS.append(f"{type.get_path()}: {type.msg.message(**params)}")
+
 
 
 #############
