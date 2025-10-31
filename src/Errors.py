@@ -50,7 +50,7 @@ class ViSortError(Exception):
     """class that makes usage of custom ViSort Errors defined in Error Tree possible"""
     def __init__(self, type:TreeBase, **params:str) -> None:
         if type == Errors.Other.QueuedErrors:
-            if len(QUEUED_ERROR_MSGS) != 0:
+            if len(QUEUED_ERROR_MSGS) > 0:
                 msg = "\n\nTHE FOLLOWING ERROR(S) OCCURED:\n\n"
                 for m in QUEUED_ERROR_MSGS:
                     msg = msg + "- " + m + "\n"
@@ -74,7 +74,7 @@ class ViSortError(Exception):
     @staticmethod
     def if_errors_in_queue_raise():
         """only raise queued errors if there are any queued errors."""
-        if len(QUEUED_ERROR_MSGS) != 0:
+        if len(QUEUED_ERROR_MSGS) > 0:
             raise ViSortError(Errors.Other.QueuedErrors)
     
     @staticmethod
@@ -85,12 +85,13 @@ class ViSortError(Exception):
         given to this function. Then it clears the error queue and puts the generated
         blame error message in the queue alone """
 
-        msg = ""
-        for m in QUEUED_ERROR_MSGS:
-            msg = msg + "- " + m + "\n"
-        msg = f"{type.get_path()}: {type.msg.message(**params)} due to the following error(s):\n" + textwrap.indent(msg, "    ")
-        QUEUED_ERROR_MSGS.clear()
-        QUEUED_ERROR_MSGS.append(msg)
+        if len(QUEUED_ERROR_MSGS) > 0:
+            msg = ""
+            for m in QUEUED_ERROR_MSGS:
+                msg = msg + "- " + m + "\n"
+            msg = f"{type.get_path()}: {type.msg.message(**params)} due to the following error(s):\n" + textwrap.indent(msg, "    ")
+            QUEUED_ERROR_MSGS.clear()
+            QUEUED_ERROR_MSGS.append(msg)
 
 
 
