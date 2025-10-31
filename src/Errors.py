@@ -71,7 +71,7 @@ class ViSortError(Exception):
 
     @staticmethod
     def if_errors_raise():
-        """If there are any queued errors, raise them as a single ViSortError"""
+        """only raise queued errors if there are any queued errors."""
         if len(QUEUED_ERROR_MSGS) != 0:
             raise ViSortError(Errors.Other.QueuedErrors)
 
