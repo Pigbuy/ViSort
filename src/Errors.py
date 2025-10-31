@@ -1,4 +1,5 @@
 from enum import Enum
+import textwrap
 
 class ErrMsg:
     def __init__(self, txt:str) -> None:
@@ -35,7 +36,7 @@ class Errors:
     class SetupError(TreeBase):
         MoreTests = ErrMsg("another test error {lol}")
     class ConfigurationError(TreeBase):
-        TestAgain = ErrMsg("another test error {lol}")
+        FilterParseFailure = ErrMsg("failed to parse filter '{filter_name}'")
     class ProgramLoopError(TreeBase):
         TestError = ErrMsg("testdasdf{lol}")
     class Other(TreeBase):
@@ -48,16 +49,17 @@ QUEUED_ERROR_MSGS:list[str] = []
 class ViSortError(Exception):
     """class that makes usage of custom ViSort Errors defined in Error Tree possible"""
     def __init__(self, type:TreeBase, **params:str) -> None:
-        if type != Errors.Other.QueuedErrors:
-            super().__init__(f"- {type.get_path()}: {type.msg.message(**params)}")
-        else:
+        if type == Errors.Other.QueuedErrors:
             if len(QUEUED_ERROR_MSGS) != 0:
                 msg = "\n\nTHE FOLLOWING ERROR(S) OCCURED:\n\n"
                 for m in QUEUED_ERROR_MSGS:
-                    msg = msg + m + "\n"
+                    msg = msg + "- " + m + "\n"
                 super().__init__(msg)
             else:
-                super().__init__("\nTHERE ARE NO REAL ERRORS, THIS SHOULD NOT HAVE HAPPENED")
+                super().__init__("\nTHERE ARE NO REAL ERRORS, THIS SHOULD NOT HAVE HAPPENED, THE PROGRAMMER IS STUPID")
+        else:
+            super().__init__(f"{type.get_path()}: {type.msg.message(**params)}")
+           
 
     @staticmethod
     def queue_error(type:TreeBase, **params:str) -> TreeBase:
@@ -70,10 +72,27 @@ class ViSortError(Exception):
         return type
 
     @staticmethod
-    def if_errors_raise():
+    def if_errors_in_queue_raise():
         """only raise queued errors if there are any queued errors."""
         if len(QUEUED_ERROR_MSGS) != 0:
             raise ViSortError(Errors.Other.QueuedErrors)
+    
+    @staticmethod
+    def make_blame_err(type:TreeBase, **params:str):
+        """ A blame error is an error that blames other errors for its occurance.
+        This function just makes one error message from all errors in the queue,
+        formats it in a way that makes it clear that those errors caused the error
+        given to this function. Then it clears the error queue and puts the generated
+        blame error message in the queue alone """
+
+        msg = ""
+        for m in QUEUED_ERROR_MSGS:
+            msg = msg + "- " + m + "\n"
+        msg = f"{type.get_path()}: {type.msg.message(**params)} due to the following error(s):\n" + textwrap.indent(msg, "    ")
+        QUEUED_ERROR_MSGS.clear()
+        QUEUED_ERROR_MSGS.append(msg)
+
+
 
 
 #############
