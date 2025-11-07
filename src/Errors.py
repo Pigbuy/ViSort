@@ -1,5 +1,7 @@
 from enum import Enum
 import textwrap
+from contextlib import contextmanager
+
 
 class ErrMsg:
     def __init__(self, txt:str) -> None:
@@ -37,15 +39,26 @@ class Errors:
         MoreTests = ErrMsg("another test error {lol}")
     class ConfigurationError(TreeBase):
         FilterParseFailure = ErrMsg("failed to parse filter '{filter_name}'")
+        class CoordinateParseError(TreeBase):
+            OutOfBounds = ErrMsg("Coordinates out of bounds")
+            NotTwoNumbers = ErrMsg("Coordinates are more than one number")
+            UnexpectedChar = ErrMsg("Found an unexpected char in coordinate string")
     class ProgramLoopError(TreeBase):
         TestError = ErrMsg("testdasdf{lol}")
-    class Other(TreeBase):
+    class Other(TreeBase): 
         QueuedErrors = ErrMsg("") #required
 
 ##################
 
-QUEUED_ERROR_MSGS:list[str] = []
+QUEUED_ERROR_MSGS:list[list] = []
+CURRENT_ERROR_MSGS_LIST_INDEX:list[int] = []
+def get_current_err_queue():
+    ceml = QUEUED_ERROR_MSGS
+    for i in CURRENT_ERROR_MSGS_LIST_INDEX:
+        ceml = ceml[i]
+    return ceml
 
+# todo make __init__ so it handles sub lists as blame errors
 class ViSortError(Exception):
     """class that makes usage of custom ViSort Errors defined in Error Tree possible"""
     def __init__(self, type:TreeBase, **params:str) -> None:
@@ -53,7 +66,7 @@ class ViSortError(Exception):
             if len(QUEUED_ERROR_MSGS) > 0:
                 msg = "\n\nTHE FOLLOWING ERROR(S) OCCURED:\n\n"
                 for m in QUEUED_ERROR_MSGS:
-                    msg = msg + "- " + m + "\n"
+                    msg = msg + "- " + str(m) + "\n"
                 super().__init__(msg)
             else:
                 super().__init__("\nTHERE ARE NO REAL ERRORS, THIS SHOULD NOT HAVE HAPPENED, THE PROGRAMMER IS STUPID")
@@ -64,9 +77,10 @@ class ViSortError(Exception):
     @staticmethod
     def queue_error(type:TreeBase, **params:str) -> TreeBase:
         """Instead of creating an exception that can be raised, just make the error message
-        and queue the error in the error queue. Then just raise the Errors.Other.QueuedErrors Error
+        and queue the error in the current error queue. Then just raise the Errors.Other.QueuedErrors Error
         like this:
-        `raise ViSortError(Errors.Other.QueuedErrors)`
+        `raise ViSortError(Errors.Other.QueuedErrors)`@contextmanager
+
         This function also returns its error type so it can be passed on to preceding functions."""
         QUEUED_ERROR_MSGS.append(f"{type.get_path()}: {type.msg.message(**params)}")
         return type
@@ -77,6 +91,14 @@ class ViSortError(Exception):
         if len(QUEUED_ERROR_MSGS) > 0:
             raise ViSortError(Errors.Other.QueuedErrors)
     
+    @contextmanager
+    def branch():
+        get_current_err_queue().append([])
+        CURRENT_ERROR_MSGS_LIST_INDEX.append(len(get_current_err_queue()))
+        yield
+        
+
+
     @staticmethod
     def make_blame_err(type:TreeBase, **params:str):
         """ A blame error is an error that blames other errors for its occurance.

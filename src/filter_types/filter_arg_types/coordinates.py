@@ -1,12 +1,13 @@
 from filter_types.filter_arg_types.filter_arg_type import FilterArgType
 from filter_types.filter_arg_types.filter_arg_types import register
+from Errors import Errors, ViSortError
 from geopy import distance
 
 
 @register("coordinates")
 class Coordinates(FilterArgType):
     @staticmethod
-    def validate_str(string:str) -> str:
+    def validate_str(string:str):
         try:
             parts = string.split(',')
             if len(parts) != 2:
