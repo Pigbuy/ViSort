@@ -51,7 +51,7 @@ class Errors:
 
 ##################
 
-QUEUED_ERROR_MSGS:list[list] = []
+QUEUED_ERROR_MSGS:list = []
 CURRENT_ERROR_MSGS_LIST_INDEX:list[int] = []
 def get_current_err_queue():
     ceml = QUEUED_ERROR_MSGS
