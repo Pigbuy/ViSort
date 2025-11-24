@@ -5,7 +5,7 @@ from filter_types.filter_arg_types.filter_arg_type import FilterArgType
 
 class FilterType():
     """A filter type is only the type of a filter. That means it cannot be instantiated.
-    It only provides the necessary functions to get the information of that filter type from the confi file
+    It only provides the necessary functions to get the information of that filter type from the config file
     and the information which information that filter type needs"""
     class Args(Enum):
         pass
