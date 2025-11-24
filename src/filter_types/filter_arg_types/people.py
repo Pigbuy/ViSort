@@ -2,12 +2,14 @@ from main import args
 from pathlib import Path
 from filter_types.filter_arg_types.filter_arg_type import FilterArgType
 from filter_types.filter_arg_types.filter_arg_types import register
+from Errors import MEM
 
 
 @register("people")
 class People(FilterArgType):
     @staticmethod
-    def validate_str(string:str) -> str:
+    def validate_str(string:str):
+        valid = True
         people_path:Path =  Path(args.faces_location)
         valid_people: list[str] = []
         for f in people_path.iterdir():
@@ -19,8 +21,13 @@ class People(FilterArgType):
         people_to_check = string.split(",")
         for person in people_to_check:
             if person not in valid_people:
-                return "couldn't find person in people folder"
-        return ""
+                MEM.queue_error(f"Couldn't find {person} in people folder",
+                                    f"there is no image or folder named {person} in the people folder")
+                valid = False
+        return valid
+                
+
+
     @staticmethod
     def from_valid_str(valid_string) -> "People":
         return People(tuple (valid_string.split(",")))

@@ -2,11 +2,13 @@ from filter_types.filter_arg_types.filter_arg_type import FilterArgType
 from filter_types.filter_arg_types.filter_arg_types import register
 import re
 import portion as P
+from Errors import MEM
 
 @register("interval")
 class Interval(FilterArgType):
     @staticmethod
-    def validate_str(string:str) -> str:
+    def validate_str(string:str) -> bool:
+        valid = True
         string = string.replace(" ","").replace("\t", "").replace("\n", "")
         pattern = re.compile(
             r"""^(
@@ -22,18 +24,24 @@ class Interval(FilterArgType):
 
         match = pattern.match(string)
         if not match:
-            return "invalid interval format"
+            MEM.queue_error("Could not validate Interval",
+                            "Interval format is invalid")
+            return False
 
         # ensure a < b with "a-b"
         if "-" in string and not string.startswith(("<", ">", "<=", ">=")):
             try:
                 a, b = string.split("-")
                 if float(a) >= float(b):
-                    return "when handling explicit ranges, the first number must be smaller than the second, it isn't"
+                    MEM.queue_error("Could not validate Interval",
+                                    "when handling explicit ranges, the first number must be smaller than the second, it isn't")
+                    valid = False
             except ValueError:
-                return "idk how this happened, but your interval format is just wrong"
-
-        return ""
+                #return "idk how this happened, but your interval format is just wrong"
+                MEM.queue_error("Could not validate Interval",
+                                "idk how this happened, but your interval format is just wrong")
+                valid = False
+        return valid
 
     def parse_valid_string(self, valid_string:str) -> None:
 

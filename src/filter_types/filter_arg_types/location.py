@@ -11,17 +11,19 @@ geolocator = Nominatim(user_agent="geo_check")
 @register("location")
 class Location(FilterArgType):
     @staticmethod
-    def validate_str(string:str):
+    def validate_str(string:str) -> bool:
         try:
             loc = geolocator.geocode(string, addressdetails=True, exactly_one=True, language="en")  # type: ignore[arg-type]
             if not loc:
-                #return "Wth did you type in the location field lol. It's garbage. Try again"
                 MEM.queue_error("Couldn't validate location",
-                                "text in location field is garbage, wtf did you type in there")
+                                "text in location field is garbage, wtf did you type in there? Try something else.")
+                return False
+                
         except GeocoderTimedOut:
-            #return "Timed out while geocoding, check your internet"
             MEM.queue_error("Couldn't validate location",
                             "Geocoder timed out. Check your internet or check if osm/Nominatim are down")
+            return False
+        return True
         
     @staticmethod
     def from_valid_str(valid_string) -> "Location":

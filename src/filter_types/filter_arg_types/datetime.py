@@ -2,12 +2,13 @@ from filter_types.filter_arg_types.filter_arg_type import FilterArgType
 from filter_types.filter_arg_types.filter_arg_types import register
 from datetime import datetime
 from dateutil import parser
+from Errors import MEM
 
 
 @register("datetime")
 class DateTime(FilterArgType):
     @staticmethod
-    def validate_str(string: str) -> str:
+    def validate_str(string: str) -> bool:
         """
         Validates if the input string can be parsed as a datetime.
         Accepts various formats like:
@@ -20,9 +21,11 @@ class DateTime(FilterArgType):
         """
         try:
             parser.parse(string)
-            return ""
+            return True
         except (ValueError, TypeError):
-            return "wrong date formatting"
+            MEM.queue_error("Couldn't validate DateTime",
+                            "wrong formatting")
+            return False
         
     @staticmethod
     def from_valid_str(valid_string: str) -> "DateTime":
