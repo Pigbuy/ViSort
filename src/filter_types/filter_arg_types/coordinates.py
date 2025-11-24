@@ -1,6 +1,6 @@
 from filter_types.filter_arg_types.filter_arg_type import FilterArgType
 from filter_types.filter_arg_types.filter_arg_types import register
-from Errors import Errors, ViSortError
+from Errors import ErrorMan, ViSortError
 from geopy import distance
 
 

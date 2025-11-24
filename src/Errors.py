@@ -9,48 +9,46 @@ CYAN = "\033[96m"
 WHITE = "\033[97m"
 RESET = "\033[0m"
 
-ERROR_TREE: dict = {}
-CURRENT_ERR_TREE_POS: list = []
-
-def get_current_tree():
-    tree = ERROR_TREE
-    for p in CURRENT_ERR_TREE_POS:
-        tree = tree[p]
-    return tree
-
 @dataclass
 class ErrorRecord:
     branch_path: list[str]
     reason: str
 
-class Errors:
-    @staticmethod
+class ErrorMan:
+    def __init__(self) -> None:
+        self._err_tree: dict = {}
+        self._current_node: list = []
+
+
+    def _get_current_tree(self):
+        tree = self._err_tree
+        for p in self._current_node:
+            tree = tree[p]
+        return tree
+
     @contextmanager
-    def branch(name: str):
-        tree = get_current_tree()
+    def branch(self, name: str):
+        tree = self._get_current_tree()
         if name not in tree:
             tree[name] = {}
-        CURRENT_ERR_TREE_POS.append(name)
+        self._current_node.append(name)
         try:
             yield
         finally:
-            CURRENT_ERR_TREE_POS.pop()
+            self._current_node.pop()
 
-    @staticmethod
-    def queue_error(name: str, reason: str):
-        get_current_tree()[name] = reason
+    def queue_error(self, name: str, reason: str):
+        self._get_current_tree()[name] = reason
     
-    @staticmethod
-    def add_error_reason(name: str, reason: str):
-        tree = get_current_tree()
+    def add_error_reason(self, name: str, reason: str):
+        tree = self._get_current_tree()
         if tree[name] == "":
             tree[name] = reason
         else:
             tree[name] = tree[name] + " and " + reason
 
 
-    @staticmethod
-    def throw_if_errors():
+    def throw_if_errors(self):
         errs_to_throw: list[ErrorRecord] = []
 
         def recurse(tree: dict, branch_path: list[str]):
@@ -61,7 +59,7 @@ class Errors:
                 else:
                     errs_to_throw.append(ErrorRecord(new_branch_path, value))
 
-        recurse(ERROR_TREE, [])
+        recurse(self._err_tree, [])
 
         if not errs_to_throw:
             return
@@ -77,3 +75,5 @@ class Errors:
             msg += "\n" + err_msg
 
         raise Exception(msg)
+    
+MEM = ErrorMan() #make main error manager

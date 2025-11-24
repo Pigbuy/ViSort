@@ -1,17 +1,17 @@
-from Errors import Errors
+from Errors import ErrorMan
 
-with Errors.branch("baking cookies"):
+with ErrorMan.branch("baking cookies"):
     print("baking cookies is fun")
-    with Errors.branch("making dough"):
+    with ErrorMan.branch("making dough"):
         print("making dough is fun")
-        Errors.queue_error("FAILED TO MAKE THE DOUGH", "I DONT HAVE ALL INGREDIENTS")
-    with Errors.branch("baking the dough in the oven"):
+        ErrorMan.queue_error("FAILED TO MAKE THE DOUGH", "I DONT HAVE ALL INGREDIENTS")
+    with ErrorMan.branch("baking the dough in the oven"):
         print("YAAY I LOVE BAKING THE DOUGH IN THE OVEN")
-        Errors.queue_error("COULDNT TURN ON THE OVEN", "THE OVEN BROKE")
-        with Errors.branch("putting cookie dough inside the oven"):
-            Errors.queue_error("COULDNT PUT COOKIE DOUGH IN THE OVEN","I HAVEN MADE THE COOKIE DOUGH")
+        ErrorMan.queue_error("COULDNT TURN ON THE OVEN", "THE OVEN BROKE")
+        with ErrorMan.branch("putting cookie dough inside the oven"):
+            ErrorMan.queue_error("COULDNT PUT COOKIE DOUGH IN THE OVEN","I HAVEN MADE THE COOKIE DOUGH")
 
-with Errors.branch("eating the cookies"):
-    Errors.queue_error("COULDNT EAT THE COOKIES","COOKIES WERENT MADE :(")
+with ErrorMan.branch("eating the cookies"):
+    ErrorMan.queue_error("COULDNT EAT THE COOKIES","COOKIES WERENT MADE :(")
 
-Errors.throw_if_errors()
+ErrorMan.throw_if_errors()
