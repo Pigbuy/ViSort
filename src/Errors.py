@@ -15,7 +15,9 @@ class ErrorRecord:
     reason: str
 
 class ErrorMan:
+    """ErrorMan is a class that can automatically make tree like Errors and make clearly tracable error messages"""
     def __init__(self) -> None:
+        """make a new ErrorMan instance"""
         self._err_tree: dict = {}
         self._current_node: list = []
 
@@ -28,6 +30,7 @@ class ErrorMan:
 
     @contextmanager
     def branch(self, name: str):
+        """the code in the `with` block execute in a new error subnode. That means all ErrorMan.queue_error() calls will make errors in the new subnode"""
         tree = self._get_current_tree()
         if name not in tree:
             tree[name] = {}
@@ -38,9 +41,11 @@ class ErrorMan:
             self._current_node.pop()
 
     def queue_error(self, name: str, reason: str):
+        """Make an error at the current tree node position. This will raise an error after ErrorMan.throw_if_errors() is called"""
         self._get_current_tree()[name] = reason
     
     def add_error_reason(self, name: str, reason: str):
+        """adds a reason to an already existing error so there can be multiple reasons for an error to occur. This will break if there is not an error with that name already present."""
         tree = self._get_current_tree()
         if tree[name] == "":
             tree[name] = reason
@@ -49,6 +54,7 @@ class ErrorMan:
 
 
     def throw_if_errors(self):
+        """If there are queued errors, this raises an error and makes a nice tracable error message out of all of the errors that were queued"""
         errs_to_throw: list[ErrorRecord] = []
 
         def recurse(tree: dict, branch_path: list[str]):
