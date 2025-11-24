@@ -1,17 +1,14 @@
 from pathlib import Path
 import configparser
+import tomllib
 
 from logger import logger
 #from filter_types.filter_types import FilterTypes
 
 def get_and_validate_config(c_location:Path) -> configparser.ConfigParser:
 
-    # read config
-    config = configparser.ConfigParser()
-    successfull_reads = config.read(c_location)
-    if not successfull_reads:
-        logger.critical("Failed to read config file")
-        raise FileNotFoundError(f"Failed to read config file: {c_location}")
+    with open(c_location, "rb") as f:
+        config = tomllib.load(f)
     logger.debug("read config")
 
     #validate config

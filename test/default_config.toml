@@ -18,3 +18,5 @@ place = Norway
 filter_type = desc_word, people
 People = Me
 desc = selfie
+
+[Filters]
