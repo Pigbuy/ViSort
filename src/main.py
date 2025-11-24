@@ -47,32 +47,22 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 args = build_parser().parse_args()
-
-def validate_image(img: Image.Image) -> bool:
-    try:
-        img.verify()
-        return True
-    except Exception:
-        return False
     
-    
+folders = [
+    args.input_location,
+    args.sorted_location,
+    args.attributes_location,
+    args.faces_location,
+    args.face_cache_location,
+]
 
-
-def main():
-    
-    config = get_and_validate_config(args.config_location)
-
-    # prepare folders
-    folders = [
-        args.input_location,
-        args.sorted_location,
-        args.attributes_location,
-        args.faces_location,
-        args.face_cache_location,
-    ]
-    for folder in folders:
-        os.makedirs(folder, exist_ok=True)
-    logger.debug("all folders created or existed already")
+def prepare_images():
+    def validate_image(img: Image.Image) -> bool:
+        try:
+            img.verify()
+            return True
+        except Exception:
+            return False
 
     # sort images into jpeg and non-jpeg
     input_folder = Path(args.input_location)
@@ -131,6 +121,17 @@ def main():
     else:
         logger.info("all images are already jpegs, no conversion needed")
         conversion_complete.set()
+
+def main():
+    
+    config = get_and_validate_config(args.config_location)
+
+    # prepare folders
+    for folder in folders:
+        os.makedirs(folder, exist_ok=True)
+    logger.debug("all folders created or existed already")
+
+    prepare_images()
 
 #    for image in image_queue:
 #        for category in config["Categories"]["category"]:
