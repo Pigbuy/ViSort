@@ -1,125 +1,69 @@
-from enum import Enum
-import textwrap
 from contextlib import contextmanager
+import textwrap
 
+# ANSI color codes
+RED = "\033[91m"
+YELLOW = "\033[93m"
+CYAN = "\033[96m"
+WHITE = "\033[97m"
+RESET = "\033[0m"
 
-class ErrMsg:
-    def __init__(self, txt:str) -> None:
-        self.txt = txt
+ERROR_TREE: dict = {}
+CURRENT_ERR_TREE_POS: list = []
 
-    def message(self, **params:str) -> str:
-        return self.txt.format(**params)
-    
-class TreeBase(Enum):
-    _path_: str
-    msg: ErrMsg
+def get_current_tree():
+    tree = ERROR_TREE
+    for p in CURRENT_ERR_TREE_POS:
+        tree = tree[p]
+    return tree
 
-    def __new__(cls, msg: ErrMsg):
-        obj = object.__new__(cls)
-        obj.msg = msg
-        return obj
-
-    def __init__(self, node: ErrMsg):
-        parts = self.__class__.__qualname__.split(".")
-        if parts:
-            parts = parts[1:]
-        parts = [p for p in parts] + [self.name]
-        self._path_ = ".".join(parts)
-
-    def get_path(self) -> str:
-        return self._path_
-
-
-##################
-##  Error Tree  ##
-##################
+class Error:
+    def __init__(self, branch_path: list[str], description: str) -> None:
+        self.branch_path = branch_path
+        self.desc = description
 
 class Errors:
-    class SetupError(TreeBase):
-        MoreTests = ErrMsg("another test error {lol}")
-        """takes parameter \"lol\""""
-    class ConfigurationError(TreeBase):
-        FilterParseFailure = ErrMsg("failed to parse filter '{filter_name}'")
-        class CoordinateParseError(TreeBase):
-            OutOfBounds = ErrMsg("Coordinates out of bounds")
-            NotTwoNumbers = ErrMsg("Coordinates are more than one number")
-            UnexpectedChar = ErrMsg("Found an unexpected char in coordinate string")
-    class ProgramLoopError(TreeBase):
-        TestError = ErrMsg("testdasdf{lol}")
-    class Other(TreeBase): 
-        QueuedErrors = ErrMsg("") #required
-
-##################
-
-QUEUED_ERROR_MSGS:list = []
-CURRENT_ERROR_MSGS_LIST_INDEX:list[int] = []
-def get_current_err_queue():
-    ceml = QUEUED_ERROR_MSGS
-    for i in CURRENT_ERROR_MSGS_LIST_INDEX:
-        ceml = ceml[i]
-    return ceml
-
-# todo make __init__ so it handles sub lists as blame errors
-class ViSortError(Exception):
-    """class that makes usage of custom ViSort Errors defined in Error Tree possible"""
-    def __init__(self, type:TreeBase, **params:str) -> None:
-        if type == Errors.Other.QueuedErrors:
-            if len(QUEUED_ERROR_MSGS) > 0:
-                msg = "\n\nTHE FOLLOWING ERROR(S) OCCURED:\n\n"
-                for m in QUEUED_ERROR_MSGS:
-                    msg = msg + "- " + str(m) + "\n"
-                super().__init__(msg)
-            else:
-                super().__init__("\nTHERE ARE NO REAL ERRORS, THIS SHOULD NOT HAVE HAPPENED, THE PROGRAMMER IS STUPID")
-        else:
-            super().__init__(f"{type.get_path()}: {type.msg.message(**params)}")
-           
-
     @staticmethod
-    def queue_error(type:TreeBase, **params:str) -> TreeBase:
-        """Instead of creating an exception that can be raised, just make the error message
-        and queue the error in the current error queue. Then just raise the Errors.Other.QueuedErrors Error
-        like this:
-        `raise ViSortError(Errors.Other.QueuedErrors)`@contextmanager
-
-        This function also returns its error type so it can be passed on to preceding functions."""
-        QUEUED_ERROR_MSGS.append(f"{type.get_path()}: {type.msg.message(**params)}")
-        return type
-
-    @staticmethod
-    def if_errors_in_queue_raise():
-        """only raise queued errors if there are any queued errors."""
-        if len(QUEUED_ERROR_MSGS) > 0:
-            raise ViSortError(Errors.Other.QueuedErrors)
-    
     @contextmanager
-    def branch():
-        get_current_err_queue().append([])
-        CURRENT_ERROR_MSGS_LIST_INDEX.append(len(get_current_err_queue()))
-        yield
-        
-
+    def branch(name: str):
+        tree = get_current_tree()
+        if name not in tree:
+            tree[name] = {}
+        CURRENT_ERR_TREE_POS.append(name)
+        try:
+            yield
+        finally:
+            CURRENT_ERR_TREE_POS.pop()
 
     @staticmethod
-    def make_blame_err(type:TreeBase, **params:str):
-        """ A blame error is an error that blames other errors for its occurance.
-        This function just makes one error message from all errors in the queue,
-        formats it in a way that makes it clear that those errors caused the error
-        given to this function. Then it clears the error queue and puts the generated
-        blame error message in the queue alone """
+    def queue_error(name: str, description: str):
+        get_current_tree()[name] = description
 
-        if len(QUEUED_ERROR_MSGS) > 0:
-            msg = ""
-            for m in QUEUED_ERROR_MSGS:
-                msg = msg + "- " + m + "\n"
-            msg = f"{type.get_path()}: {type.msg.message(**params)} due to the following error(s):\n" + textwrap.indent(msg, "    ")
-            QUEUED_ERROR_MSGS.clear()
-            QUEUED_ERROR_MSGS.append(msg)
+    @staticmethod
+    def throw_if_errors():
+        errs_to_throw: list[Error] = []
 
+        def recurse(tree: dict, branch_path: list[str]):
+            for key, value in tree.items():
+                new_branch_path = branch_path + [key]
+                if isinstance(value, dict):
+                    recurse(value, new_branch_path)
+                else:
+                    errs_to_throw.append(Error(new_branch_path, value))
 
+        recurse(ERROR_TREE, [])
 
+        if not errs_to_throw:
+            return
 
-#############
-##  Usage  ##
-#############
-#raise ViSortError(Errors.SetupError.MoreTests, lol= "nononono")
+        msg = f"{YELLOW}\n\nTHE FOLLOWING {len(errs_to_throw)} ERROR(S) OCCURRED:{RESET}"
+
+        for i, error in enumerate(errs_to_throw, 1):
+            err_msg = f"{WHITE}----{i}-----{RESET}\n{RED}{error.branch_path[-1]}{RESET}\n"
+            err_path = error.branch_path[:-1]
+            for bn in reversed(err_path):
+                err_msg += textwrap.indent(f"{WHITE}while{RESET}\n    {CYAN}{bn}{RESET}\n", "    ")
+            err_msg += f"\n{WHITE}because {RED}{error.desc}{RESET}\n"
+            msg += "\n" + err_msg
+
+        raise Exception(msg)
