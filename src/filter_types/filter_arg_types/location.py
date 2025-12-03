@@ -1,5 +1,4 @@
 from filter_types.filter_arg_types.filter_arg_type import FilterArgType
-from filter_types.filter_arg_types.filter_arg_types import register
 from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut
 from geopy import distance
@@ -8,26 +7,24 @@ from Errors import MEM
 
 geolocator = Nominatim(user_agent="geo_check")
 
-@register("location")
 class Location(FilterArgType):
-    @staticmethod
-    def validate_str(string:str) -> bool:
+    def __init__(self, string:str):
+        valid = True
         try:
             loc = geolocator.geocode(string, addressdetails=True, exactly_one=True, language="en")  # type: ignore[arg-type]
             if not loc:
                 MEM.queue_error("Couldn't validate location",
                                 "text in location field is garbage, wtf did you type in there? Try something else.")
-                return False
+                valid = False
                 
         except GeocoderTimedOut:
             MEM.queue_error("Couldn't validate location",
                             "Geocoder timed out. Check your internet or check if osm/Nominatim are down")
-            return False
-        return True
-        
-    @staticmethod
-    def from_valid_str(valid_string) -> "Location":
-        return Location(geolocator.geocode(valid_string, addressdetails=True, exactly_one=True, language="en"))  # type: ignore[arg-type]
+            valid = False
+        if valid:
+            self.location = geolocator.geocode(valid_string, addressdetails=True, exactly_one=True, language="en")  # type: ignore[arg-type]
+        else:
+            self.location = "Ohio" #idk lol needed a default value, hope it doesn't break anything
 
     def are_coords_in_same_smallest_region(self, coords:tuple[float,float]) -> bool:
         """returns True if the given coordinates are in the same smallest specified region.
@@ -48,12 +45,8 @@ class Location(FilterArgType):
             else:
                 if key == 'locality' and one_common == False:
                     return False
-        
         return True
 
     def get_dist_to(self, coords) -> float:
         self_coords = (getattr(self.location, 'latitude', None), getattr(self.location, 'longitude', None))
         return distance.distance(self_coords, coords).km
-    
-    def __init__(self, location) -> None:
-        self.location = location

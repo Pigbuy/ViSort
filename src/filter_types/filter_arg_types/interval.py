@@ -1,13 +1,11 @@
 from filter_types.filter_arg_types.filter_arg_type import FilterArgType
-from filter_types.filter_arg_types.filter_arg_types import register
 import re
 import portion as P
 from Errors import MEM
 
-@register("interval")
 class Interval(FilterArgType):
-    @staticmethod
-    def validate_str(string:str) -> bool:
+
+    def __init__(self, string:str):
         valid = True
         string = string.replace(" ","").replace("\t", "").replace("\n", "")
         pattern = re.compile(
@@ -26,10 +24,10 @@ class Interval(FilterArgType):
         if not match:
             MEM.queue_error("Could not validate Interval",
                             "Interval format is invalid")
-            return False
+            valid = False
 
         # ensure a < b with "a-b"
-        if "-" in string and not string.startswith(("<", ">", "<=", ">=")):
+        if "-" in string and not string.startswith(("<", ">", "<=", ">=")) and valid:
             try:
                 a, b = string.split("-")
                 if float(a) >= float(b):
@@ -37,13 +35,9 @@ class Interval(FilterArgType):
                                     "when handling explicit ranges, the first number must be smaller than the second, it isn't")
                     valid = False
             except ValueError:
-                #return "idk how this happened, but your interval format is just wrong"
                 MEM.queue_error("Could not validate Interval",
                                 "idk how this happened, but your interval format is just wrong")
                 valid = False
-        return valid
-
-    def parse_valid_string(self, valid_string:str) -> None:
 
         def parse_interval(expr: str) -> P.Interval:
             expr = expr.strip()
@@ -73,11 +67,11 @@ class Interval(FilterArgType):
             else:
                 num = float(expr)
                 return P.singleton(num)
-            
-        self.portion_interval = parse_interval(valid_string)
 
+        if valid:
+            self.portion_interval = parse_interval(string)
+        else:
+            self.portion_interval = P.open(float("-inf"), float("inf")) # default value it falls back to because why not
+        
     def contains(self, number:float) -> bool:
         return number in self.portion_interval
-    
-    def __init__(self, portion_interval:P.Interval) -> None:
-        self.portion_interval = portion_interval

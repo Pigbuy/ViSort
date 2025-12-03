@@ -1,10 +1,9 @@
-from typing import Type, Dict, Callable
-
+from typing import Type, Callable
 from filter_types.filter_type import FilterType
 
 # Runtime registry for FilterType subclasses. Modules should call
 # `register("name")(Cls)` to register filter types.
-REGISTRY: Dict[str, Type[FilterType]] = {}
+REGISTRY: dict[str, Type[FilterType]] = {}
 
 def register(name: str) -> Callable[[Type[FilterType]], Type[FilterType]]:
     def decorator(cls: Type[FilterType]) -> Type[FilterType]:
@@ -14,3 +13,6 @@ def register(name: str) -> Callable[[Type[FilterType]], Type[FilterType]]:
 
 def get(name: str) -> Type[FilterType]:
     return REGISTRY[name]
+
+def exists(name:str) -> bool:
+    return name in REGISTRY

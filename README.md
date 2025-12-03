@@ -29,76 +29,49 @@ with that attribute for easy access.
 ## File structure:
 
 ```
-- Input
-   - Image 5.jpg(being processed or is in queue until its moved to its sorted category)
-- Sorted
-    - default
-    - Category 1
-        - Image 1.jpg(contains descr. and specific face recognition data in description metadata)
-        - Image 4.jpg
-        - ...
-    - Category 2
-    - ...
-- Attributes
-    - Attribute 1
-        - Link_To_Image
-        - ...
-    - Attribute 2
-    - ...
-- People
-    - Max
-        - Max_Img1.jpg
-        - Max_Img2.jpg
-    - Maya.jpg
-    - ...
-People_Cache (saves unknown faces in case they appear again)
-    - person 1.jpg
-    - ...
+Input
+├── Image 5.jpg
+├── Image 6.jpg
+└── ...
 
-- Config.ini (contains attribute and category configuration)
+Sorted
+├── default
+├── Category 1
+│   ├── Image 1.jpg
+│   ├── Image 4.jpg
+│   └── ...
+├── Category 2
+└── ...
+
+Attributes
+├── Attribute 1
+│   ├── Link_To_Image
+│   └── ...
+├── Attribute 2
+└── ...
+
+People
+├── Max
+│   ├── Max_Img1.jpg
+│   └── Max_Img2.jpg
+├── Maya.jpg
+└── ...
+
+People_Cache
+├── person 1.jpg
+└── ...
+
+Config.toml
+
 
 ```
 
 ## Config.ini
 
+https://time.lol/
+
 ```
-[Categories]
-category = Norway Trip                   # images in a specific time frame
-category = Nature                        # Images fitting description
-category = At work                       # Images at specific location
-category = Norwegian Sheep               # Images at location fitting description
-category = Selfie                        # Images fitting description and specific person
-category = Group Selfie with the homies  # Images fitting description and multiple people
-category = default                       # automatically generated, overflow, does not need configuration
 
-[Norway Trip]
-filter_type = date
-start_date = DD.MM.YYYY
-start_time = XX:XX
-end_date = DD.MM.YYYY
-end_time = XX:XX
-
-[Nature]
-filter_type = desc_word # use "desc" for more specific description
-desc = nature
-
-[At work]
-filter_type = location
-Country = Germany
-city = Berlin
-Address = 14 Main str
-Coordinates = 52.5200, 13.4050 # alternatively use coordinates
-radius = 1000 # radius in m, the address is counted as at that location
-
-[Norwegian Sheep]
-filter_type = location, desc_word
-Country = Norway
-desc = sheep
-
-[Selfie]
-filter_type = desc_word, people
-person = Me
-desc = selfie
 
 ```
 Attributes follow the same syntax but they can be assigned to multiple images

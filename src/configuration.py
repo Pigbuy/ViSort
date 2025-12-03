@@ -11,12 +11,14 @@ def get_and_validate_config(c_location:Path) -> configparser.ConfigParser:
         config = tomllib.load(f)
     logger.debug("read config")
 
+    
+
     #validate config
     logger.debug("validating config")
     if not config["Categories"]["categories"]:
         logger.critical(f'No section defining sorting categories in {c_location}')
         raise RuntimeError("Must specify list of categories in configuration file to sort the images into.")
-    
+
     categories = [s.strip() for s in config["Categories"]["categories"].strip().split(",")]
     for category in categories:
         try:
@@ -33,11 +35,11 @@ def get_and_validate_config(c_location:Path) -> configparser.ConfigParser:
         if "coords" in filter_types and "location" in filter_types:
             logger.critical("Cannot use location and coords filter type in same category/Attribute configuration")
             raise RuntimeError("Cannot use location and coords filter type in same category/Attribute configuration")
-        
+
 #        for ft_name in config[category]["filter_type"]:
 #            ft = FilterTypes[ft_name]
-            
-    
+
+
     # todo
 
 
