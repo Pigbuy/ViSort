@@ -14,6 +14,10 @@ class ErrorRecord:
     branch_path: list[str]
     reason: str
 
+
+# could easily make async/multithreaded version by instead of makin a tree making a list
+# defining current position for thread and when error occurs just append the current state of that list
+# plus err mesg to the universal error queu(that is maybe also locked while its being written to)
 class ErrorMan:
     """ErrorMan is a class that can automatically make tree like Errors and make clearly tracable error messages"""
     def __init__(self) -> None:
