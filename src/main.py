@@ -56,7 +56,7 @@ folders = [
     args.face_cache_location,
 ]
 
-def prepare_images():
+def prepare_images() -> Queue[Path]:
     def validate_image(img: Image.Image) -> bool:
         try:
             img.verify()
@@ -121,6 +121,8 @@ def prepare_images():
     else:
         logger.info("all images are already jpegs, no conversion needed")
         conversion_complete.set()
+    
+    return image_queue
 
 def main():
     
@@ -131,7 +133,9 @@ def main():
         os.makedirs(folder, exist_ok=True)
     logger.debug("all folders created or existed already")
 
-    prepare_images()
+    image_queue = prepare_images()
+
+    
 
 #    for image in image_queue:
 #        for category in config["Categories"]["category"]:

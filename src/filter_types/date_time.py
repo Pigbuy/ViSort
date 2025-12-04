@@ -1,10 +1,13 @@
+from typing import cast
 from filter_types.filter_type import FilterType
 from filter_types.filter_types import register
 
-from datetime import datetime
-
 from Errors import MEM
 from logger import logger
+
+from datetime import datetime
+from pathlib import Path
+from PIL import Image
 
 @register("datetime")
 class DateTime(FilterType):
@@ -84,8 +87,29 @@ class DateTime(FilterType):
                 if valid:
                     self.start_dt = sdt
                     self.end_dt = edt
+            
+            self.valid = valid
                 
 
             
-    def filter(self, image) -> bool:
-        return False
+    def filter(self, image:Path) -> bool:
+        img = Image.open(image)
+        exif = img.getexif()
+        raw = exif.get(306)  # "2024:11:29 15:23:10"
+        if raw is None:
+            logger.warning(f"{image} does not have date and time metadata, skipping")
+            return False
+        else:
+            dt = datetime.strptime(raw, "%Y:%m:%d %H:%M:%S") # type: ignore[arg-type]
+        
+        if self.multi:
+            for st, et in zip(cast(list[datetime], self.start_dt), cast(list[datetime], self.end_dt)):
+                if not (st < dt < et):
+                    return False
+            return True
+        else:
+            if not (cast(datetime, self.start_dt) < dt < cast(datetime, self.end_dt)):
+                return False
+            else:
+                return True
+        
