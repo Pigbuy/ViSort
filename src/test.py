@@ -1,21 +1,9 @@
-from pathlib import Path
-from PIL import Image
-import pillow_heif
-from typing import Optional
-from datetime import datetime
+from geopy.geocoders import Nominatim
+from geopy.exc import GeocoderTimedOut
+geolocator = Nominatim(user_agent="geo_check")
 
-pillow_heif.register_heif_opener()
+loc = geolocator.geocode("New York City, USA", addressdetails=True, exactly_one=True, language="en")
 
-images = ("test/Input/Adress.jpg", "test/Input/None.jpg", "test/Input/CoordsHEIC.heic", "test/Input/Coords.jpg")
+coords = (getattr(loc, 'latitude', None), getattr(loc, 'longitude', None))
 
-
-for image in images:
-    img = Image.open(image)
-    exif = img.getexif()
-    raw = exif.get(306)
-    if raw is None:
-        print("no date found")
-    else:
-        dt = datetime.strptime(raw, "%Y:%m:%d %H:%M:%S") # type: ignore[arg-type]
-        print(f"{image}: {dt}")
-
+print(coords)
