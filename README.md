@@ -12,21 +12,137 @@ What the program does:
     does the following description fit the description "nature". Answer strictly with yes or no: "This image is a close-up of a cat's nose. The focus is on the texture and details of the fur around the nose, which appears to be a mix of gray and white. The fur is soft and fluffy, and the nose itself is a light brown color. The background is blurred, emphasizing the nose as the main subject of the image."
 ---
 
-## Definitions
-### Category
-A Category is always the place the original image is moved to.
-An image can only be in one category.
-If there is a conflict, where the image fits in two categories, it will choose according to a categorization_type
-priority list also definable in this configuration file
+# Definitions
+## Filters
+A Filter defines attribute boundaries an image can have. If an image is within these boundaries, the image is conform to this filter.
+For example a Filter can define image attribute boundaries, so that only images that were taken in the USA are conform.
+This would be a Filter of the location type.
 
-### Attributes
-An attribute is simply an attribute of an image.
-It does strictly sort it in one category.
-An image can have multiple attributes assigned with categorization_types.
-In the file system this is just a folder with alot of symlinks to the images
-with that attribute for easy access.
+### Filter Groups
+A Filter Group is, as the name suggests, a Group of Filters.   
+A Filter must always be part of a Filter Group.
+The Filter Group takes an image and feeds it into every one of its Filters. When one of them fails, the image is non conform with the Filter Group and wont be sorted into that group by the Sorter.
 
-## File structure:
+A Filter Group can be defined in the configuration file as follows:   
+```
+[FilterGroups.FilterGroupName]
+    Sorter = ""
+    [FilterGroups.FilterGroupName.FilterType1]
+    filter_arg_1 = ""
+    filter_arg_2 = ""
+
+    [FilterGroups.FilterGroupName.FilterType2]
+    filter_arg_1 = ""
+    filter_arg_2 = ""
+```
+
+- "FilterGroupName" is the name of the FilterGroup which you choose yourself.
+- "FilterType1" and "FilterType2" are the names of Filter Types. See the `Filter Types` section for information on which Filter Types exist and which arguments which Filter Types take.
+- "filter_arg_1" and "filter_arg_2" are arguments given to filters.   
+
+## Sorters
+A Sorter sorts images into their conform Filter Groups.   
+It defines how images are sorted and what to do when an image is conform with multiple Filter Groups.   
+
+A Sorter can be defined in the configuration file as follows:
+```
+[Sorter.MySorter1]
+priority = 0
+method = "move" # move, link, tag, name, json
+input_folder = ""
+output_folder = ""
+resolve_equal_sort_method = "all" # choose_auto, choose_hierarchy, group_hierarchy
+#hierarchy = ["location", "people", ...]
+```
+
+# Filter Types
+## Location
+Simple usage:
+```
+[FilterGroups.InNorway]
+    [FilterGroups.InNorway.location]
+    location = "Norway"
+```
+This FilterGroup has a Filter of the "location" type and conforms every image that was taken in Norway.   
+
+Example with radius:
+```
+[FilterGroups.RingAroundGermany]
+    [FilterGroups.RingAroundGermany.location]
+    location = "Germany"
+    radius = "500-1500"
+```
+
+Example with multiple locations:
+```
+[FilterGroups.ParisOrNewYork]
+    [FilterGroups.ParisOrNewYork.location]
+    location = ["Paris, France", "New York City, USA"]
+    radius = "500-1500"
+```
+This Filter Group makes all images conform that are between 500km and 1500km distance from the middle of Germany.
+
+### Arguments
+#### location
+- mandatory
+- conforms all images in this(these) location(s)
+- just an address or name of place or a list of them
+#### radius
+- optional
+- don't use with broad locations. Use with specific addresses or city regions
+- if given, additionally conforms all images taken within this radius in km of the middle of the location(s) specified
+- takes integers, floats and intervals in strings(like this: ">10", "10-20", ">=5")
+
+## coordinates
+examples:
+```
+[FilterGroups.AtHome]
+    [FilterGroups.AtHome.coordinates]
+    coords = "22.443889, -74.220333"
+    radius = 0.1 # in km
+
+[FilterGroups.NotAtHome]
+    [FilterGroups.NotAtHome.coordinates]
+    coords = "22.443889, -74.220333"
+    radius = ">0.5" # in km
+```
+### Arguments
+#### coords
+- mandatory
+- coordinates in Decimal Degrees(without "°") seperated by comma
+- also takes a list of them 
+#### radius
+- mandatory
+- defines the radius from the coordinates in km, where the image must have been taken in to be conform
+- takes takes integers, floats and intervals in strings(like this: ">10", "10-20", ">=5") (similar to the radius in the location Filter Type)
+
+## datetime
+example:
+```
+[FilterGroups.SummerVacation]
+    [FilterGroups.SummerVacation.datetime]
+    start = [2025-07-01T00:00:00+02:00, 2024-07-01T00:00:00+02:00]
+    end = [2025-09-08T00:00:00+02:00, 2024-09-08T00:00:00+02:00]
+```
+### Arguments
+#### start
+- mandatory
+- defines when the time period starts in which the image must have been taken to be conform
+- takes datetimes in the RFC 3339 standard.
+- when given multiple, must be same amount as in the end argument
+- datetimes at the same index in start and end arguments form a time interval
+- datetimes in start must be before end in time
+
+#### end
+- mandatory
+- defines when the time period ends in which the image must have been taken to be conform
+- takes datetimes in the RFC 3339 standard.
+- when given multiple, must be same amount as in the start argument
+- datetimes at the same index in end and start arguments form a time interval
+- datetimes in end must be after start in time
+
+
+# File structure:
 
 ```
 Input
@@ -62,36 +178,28 @@ People_Cache
 └── ...
 
 Config.toml
-
-
 ```
 
-## Config.ini
-
+## Helpful Websites
 https://time.lol/
 
-```
-
-
-```
-Attributes follow the same syntax but they can be assigned to multiple images
-
-### Filter Type List
-- location
-- coords
-- desc
-- desc_word
-- people
-- people_count
-- known_people_count
-- person_mood
-- average_mood
-- date
-- person_age
-- average_age # syntax like >5 is possible
-- gender_count
-- gender_fraction
-- emotions #angry, fear, neutral, sad, disgust, happy, and surprise with fractions including ">0.5"
+## Filter Type ToDo List
+- location              [✅]
+- coords                [✅]
+- datetime              [✅]
+- desc                  [❌]
+- desc_word             [❌]
+- people                [❌]
+- people_count          [❌]
+- known_people_count    [❌]
+- person_mood           [❌]
+- average_mood          [❌]
+- person_age            [❌]
+- average_age           [❌]
+- gender_count          [❌]
+- gender_fraction       [❌]
+- emotions              [❌]
+    #angry, fear, neutral, sad, disgust, happy, and surprise with fractions including ">0.5"
 
 ## MANDATORY OPTIONS
 - Disable Face recognition
@@ -101,31 +209,6 @@ Attributes follow the same syntax but they can be assigned to multiple images
 - background sort mode
 - custom names and paths for Input, Sorted, Attributes, People, People_cache
 
-## Operation Strategy
-
-1. Read config file
-2. iterate through Input Folder Files
-    1. generate description
-    2. make sure all folders are present
-    2. sort into Category
-        1. look for everything but desc(also scan for faces and auto cache them if enabled)
-        2. if all are true by just one there
-        3. else make weird algorythm to find out which one to choose
-        4. now let llm choose from all desc_words including "other" for default
-        5. move image to Category folder
-    3. iterate over attributes
-        1. if all requirements are met
-        2. symlink image at attribute folder
-    
-
-
-NO PARALLELISM OR ASYNCRONYSM YET
-
-## Libraries
-- Ollama for LLMs and image description
-- deepface for face detection
-- Pillow for image formatting
-- 
 
 # Dependencies so far:
 - portion
@@ -135,8 +218,3 @@ NO PARALLELISM OR ASYNCRONYSM YET
 # future Dependencies
 - ollama
 - deepface
-
-# Implemented so far:
-- argument reading
-- picture conversion to jpeg
-- auto path creation
