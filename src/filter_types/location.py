@@ -1,14 +1,27 @@
+# arg type imports
+from filter_arg_types.location import Location
+
+# Filter Type imports
 from filter_types.filter_type import FilterType
-class Location(FilterType):
-    class FilterArgs():
+from filter_types.filter_types import register
 
-    def __init__(self, country:str, city:str, address:str, radius:int) -> None:
-        self.country = country
-        self.city = city
-        self.address = address
-        self.radius = radius
+# src modules imports
+from Errors import MEM
+from logger import logger
 
-    def validate(self) -> bool:
-        pass
-    def filter(self, image) -> bool:
+# builtin imports
+from pathlib import Path
+from typing import Optional, Union
+
+# library imports
+from PIL import Image
+import pillow_heif
+
+@register("location")
+class Loc(FilterType):
+    def __init__(self) -> None:
+        super().__init__()
+    
+    def filter(self, image: Path) -> bool:
+        pillow_heif.register_heif_opener() # support heif
         pass

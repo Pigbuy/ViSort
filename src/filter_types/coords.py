@@ -1,14 +1,21 @@
+# arg type imports
 from filter_arg_types.coordinates import Coordinates
 
+# Filter Type imports
 from filter_types.filter_type import FilterType
 from filter_types.filter_types import register
 
+# src modules imports
 from Errors import MEM
 from logger import logger
 
+# builtin imports
 from pathlib import Path
-from PIL import Image
 from typing import Optional, Union
+
+# library imports
+from PIL import Image
+import pillow_heif
 
 @register("coordinates")
 class Coords(FilterType):
@@ -23,6 +30,7 @@ class Coords(FilterType):
                     self.coords.append(Coordinates(c))
 
     def filter(self, image:Path) -> bool:
+        pillow_heif.register_heif_opener() # support heif
         def extract_coords(image_path: Path) -> Optional[tuple[float, float]]:
             try:
                 with Image.open(image_path) as img:

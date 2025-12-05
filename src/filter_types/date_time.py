@@ -1,13 +1,19 @@
+# Filter Type imports
 from filter_types.filter_type import FilterType
 from filter_types.filter_types import register
 
+# src modules imports
 from Errors import MEM
 from logger import logger
 
-from datetime import datetime
+# builtin imports
 from pathlib import Path
-from PIL import Image
 from typing import Union
+from datetime import datetime
+
+# library imports
+from PIL import Image
+import pillow_heif
 
 @register("datetime")
 class DateTime(FilterType):
