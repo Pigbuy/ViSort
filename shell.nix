@@ -5,6 +5,7 @@ mkShell {
     python312
     python312Packages.geopy
     python312Packages.pillow
+    python312Packages.pillow-heif
     python312Packages.portion
     python312Packages.tqdm
     python312Packages.deepface
