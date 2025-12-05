@@ -101,15 +101,14 @@ class DateTime(FilterType):
             dt = datetime.strptime(raw, "%Y:%m:%d %H:%M:%S") # type: ignore[arg-type]
         
         if isinstance(self.start_dt, datetime) and isinstance(self.end_dt, datetime):
-            if not (self.start_dt < dt < self.end_dt):
-                return False
-            else:
+            if self.start_dt < dt < self.end_dt:
                 return True
+            return False
         elif isinstance(self.start_dt, list) and isinstance(self.end_dt, list):
             for st, et in zip(self.start_dt, self.end_dt):
-                if not (st < dt < et):
-                    return False
-            return True
+                if st < dt < et:
+                    return True
+            return False
         else:
             logger.critical("what the fuck, this is not normal, you are a magician or something, lets just ignore this for now :')")
             return False
