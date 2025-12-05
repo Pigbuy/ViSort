@@ -28,7 +28,7 @@ class Coords(FilterType):
                 with Image.open(image_path) as img:
                     exif = img.getexif()
 
-                    # Try to extract GPS coordinates from EXIF
+                    logger.debug(f"getting location metadata for {image_path}")
                     try:
                         gps_ifd = exif.get_ifd(34853)
                         if gps_ifd:
@@ -57,11 +57,11 @@ class Coords(FilterType):
                     except Exception:
                         pass
                     
-                    logger.warning("no location metadata found")
+                    logger.warning(f"no location metadata found in:{image_path}")
                     return None
 
             except Exception as e:
-                logger.warning("could not read file")
+                logger.warning(f"could not read file {image_path}")
                 return None
         
         image_coords = extract_coords(image)
