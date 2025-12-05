@@ -3,7 +3,7 @@ from geopy import distance
 from Errors import MEM
 
 class Coordinates(FilterArgType):
-    def __init__(self, string:str):
+    def __init__(self, string):
         if not isinstance(string, str):
             MEM.queue_error("could not validate coordinates filter configuration",
                             f"coordinate argument is not a list of strings.\nInstead the list contains: {type(string).__name__}")
