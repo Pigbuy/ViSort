@@ -4,7 +4,7 @@
 [FilterGroups.NorwayTrip]
     [FilterGroups.NorwayTrip.location]
     location = "Norway"
-    radius = 5 #in km, optional 
+    #radius = 500 #in m, optional, shouldnt be used here because location is too broad
 
 [FilterGroups.SummerVacation]
     [FilterGroups.SummerVacation.datetime]
@@ -15,7 +15,7 @@
     [FilterGroups.Selfie.description]
     description = "selfie"
     [FilterGroups.Selfie.people_count]
-    count = "1"
+    count = 1
 
 [FilterGroups.Parents]
     [FilterGroups.Parents.people]
@@ -27,9 +27,14 @@
     [FilterGroups.MeInSpain.location]
     location = "Mallorca"
 
-[FilterGroups.MyFilterGroup]
-    [FilterGroups.MyFilterGroup.average_age]
+[FilterGroups.GrownUps]
+    [FilterGroups.GrownUps.average_age]
     average_age = ">=18"
+
+[FilterGroups.AtHome]
+    [FilterGroups.AtHome.coordinates]
+    coords = "22.443889, -74.220333"
+    radius = 150 # in m
 
 
 #----Sorters----
