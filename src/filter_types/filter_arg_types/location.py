@@ -8,7 +8,10 @@ from Errors import MEM
 geolocator = Nominatim(user_agent="geo_check")
 
 class Location(FilterArgType):
-    def __init__(self, string:str):
+    def __init__(self, string):
+        if not isinstance(string, str):
+            MEM.queue_error("could not validate location filter configuration",
+                            f"location argument is not a list of strings.\nInstead the list contains: {type(string).__name__}")
         valid = True
         try:
             loc = geolocator.geocode(string, addressdetails=True, exactly_one=True, language="en")  # type: ignore[arg-type]
@@ -47,6 +50,6 @@ class Location(FilterArgType):
                     return False
         return True
 
-    def get_dist_to(self, coords) -> float:
+    def get_dist_to_km(self, coords) -> float:
         self_coords = (getattr(self.location, 'latitude', None), getattr(self.location, 'longitude', None))
         return distance.distance(self_coords, coords).km

@@ -4,6 +4,9 @@ from Errors import MEM
 
 class Coordinates(FilterArgType):
     def __init__(self, string:str):
+        if not isinstance(string, str):
+            MEM.queue_error("could not validate coordinates filter configuration",
+                            f"coordinate argument is not a list of strings.\nInstead the list contains: {type(string).__name__}")
         #valid = True
         try:
             parts = string.split(',')
@@ -28,5 +31,5 @@ class Coordinates(FilterArgType):
         
         self.coordinates = (lat,lon)
 
-    def get_dist_to_m(self, coordinates:tuple[float,float]) -> float:
-        return distance.distance(self.coordinates, coordinates).m
+    def get_dist_to_km(self, coordinates:tuple[float,float]) -> float:
+        return distance.distance(self.coordinates, coordinates).km
