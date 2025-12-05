@@ -17,9 +17,24 @@ import pillow_heif
 
 @register("datetime")
 class DateTime(FilterType):
-    def __init__(self, start_dt, end_dt) -> None:
-        logger.debug("validating datetime filter")
+    def __init__(self, args:dict) -> None:
+        logger.debug("validating datetime filter configuration")
         with MEM.branch("validating datetime filter configuration"):
+
+            if args["start"]:
+                start_dt = args["start"]
+            else:
+                MEM.queue_error("couldn't validate datetime filter configuration",
+                                "start argument is missing")
+                return
+            
+            if args["end"]:
+                end_dt = args["end"]
+            else:
+                MEM.queue_error("couldn't validate datetime filter configuration",
+                                "end argument is missing")
+                return
+            
             valid = True
 
             if isinstance(start_dt, list) and isinstance(end_dt, list):

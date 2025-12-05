@@ -1,5 +1,6 @@
 # arg type imports
 from filter_arg_types.coordinates import Coordinates
+from filter_arg_types.interval import Interval
 
 # Filter Type imports
 from filter_types.filter_type import FilterType
@@ -19,15 +20,38 @@ import pillow_heif
 
 @register("coordinates")
 class Coords(FilterType):
-    def __init__(self, coords: Union[str, list[str]], radius: int) -> None:
-        self.radius = radius
+    def __init__(self, args:dict) -> None:
+        logger.debug("validating coordinates filter configuration")
         with MEM.branch("validating coordinates filter configuration"):
+            if args["coords"]:
+                coords = args["coords"]
+            else:
+                MEM.queue_error("couldn't validate coordinates filter configuration",
+                                "coords argument is missing")
+                return
+            
+            if args["radius"]:
+                radius = args["radius"]
+            else:
+                MEM.queue_error("couldn't validate coordinates filter configuration",
+                                "radius argument is missing")
+                return
+
             if isinstance(coords, str):
                 self.coords:Union[Coordinates, list[Coordinates]] = Coordinates(coords)
-            else:
+            elif isinstance(coords, list):
                 self.coords: Union[Coordinates, list[Coordinates]] = []
                 for c in coords:
                     self.coords.append(Coordinates(c))
+            else:
+                MEM.queue_error("couldn't validate coordinates filter configuration",
+                                f"coords argument isn't a string or a list of strings.\nInstead it's: {type(coords).__name__}")
+            
+            if isinstance(radius, Union[int, float, str]):
+                self.radius = radius
+            else:
+                MEM.queue_error("couldn't validate coordinates filter configuration",
+                                f"coords argument isn't a string or a list of strings.\nInstead it's: {type(coords).__name__}")
 
     def filter(self, image:Path) -> bool:
         pillow_heif.register_heif_opener() # support heif
@@ -76,13 +100,22 @@ class Coords(FilterType):
         if image_coords is None:
             return False
         
+        def in_radius(coords:Coordinates) -> bool:
+            if isinstance(self.radius, Union[float, int]):
+                return coords.get_dist_to_km(image_coords) <= self.radius
+            elif isinstance(self.radius, str):
+                i = Interval(self.radius)
+                return i.contains(coords.get_dist_to_km(image_coords))
+            else:
+                return False
+        
         if isinstance(self.coords, list):
             for c in self.coords:
-                if c.get_dist_to_m(image_coords) <= self.radius:
+                if in_radius(c):
                     return True
             return False
         else:
-            if self.coords.get_dist_to_m(image_coords) <= self.radius:
+            if in_radius(self.coords):
                 return True
             return False
             
