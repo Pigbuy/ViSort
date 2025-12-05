@@ -4,7 +4,7 @@
 [FilterGroups.NorwayTrip]
     [FilterGroups.NorwayTrip.location]
     location = "Norway"
-    #radius = 500 #in m, optional, shouldnt be used here because location is too broad
+    #radius = 1 #in km, optional, shouldnt be used here because location is too broad
 
 [FilterGroups.SummerVacation]
     [FilterGroups.SummerVacation.datetime]
@@ -34,7 +34,17 @@
 [FilterGroups.AtHome]
     [FilterGroups.AtHome.coordinates]
     coords = "22.443889, -74.220333"
-    radius = 150 # in m
+    radius = 150 # in km
+
+[FilterGroups.NotAtHome]
+    [FilterGroups.NotAtHome.coordinates]
+    coords = "22.443889, -74.220333"
+    radius = ">0.5" # in km
+
+[FilterGroups.RingAroundGermany]
+    [FilterGroups.RingAroundGermany.location]
+    location = "Germany"
+    radius = "500-1500"
 
 
 #----Sorters----
