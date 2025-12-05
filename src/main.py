@@ -10,6 +10,9 @@ import time
 from configuration import get_and_validate_config
 from logger import logger
 
+import pillow_heif
+pillow_heif.register_heif_opener()
+
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Image processing pipeline")
