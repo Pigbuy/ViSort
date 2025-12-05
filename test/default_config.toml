@@ -34,12 +34,12 @@
 [FilterGroups.AtHome]
     [FilterGroups.AtHome.coordinates]
     coords = "22.443889, -74.220333"
-    radius = 150 # in km
+    radius = 0.1 # in km
 
 [FilterGroups.NotAtHome]
     [FilterGroups.NotAtHome.coordinates]
     coords = "22.443889, -74.220333"
-    radius = ">0.5" # in km
+    radius = ">0.1" # in km
 
 [FilterGroups.RingAroundGermany]
     [FilterGroups.RingAroundGermany.location]
@@ -50,6 +50,9 @@
 #----Sorters----
 
 [Sorter.MySorter1]
+priority = 0
 method = "move" # move, link, tag, name, json
+input_folder = ""
+output_folder = ""
 resolve_equal_sort_method = "all" # choose_auto, choose_hierarchy, group_hierarchy
 #hierarchy = ["location", "people", ...]
