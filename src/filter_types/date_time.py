@@ -1,4 +1,3 @@
-from typing import cast
 from filter_types.filter_type import FilterType
 from filter_types.filter_types import register
 
@@ -8,6 +7,7 @@ from logger import logger
 from datetime import datetime
 from pathlib import Path
 from PIL import Image
+from typing import Union
 
 @register("datetime")
 class DateTime(FilterType):
@@ -18,7 +18,6 @@ class DateTime(FilterType):
 
             if isinstance(start_dt, list) and isinstance(end_dt, list):
                 logger.debug("using multiple start and end datetimes")
-                self.multi = True
                 
                 logger.debug("validating start datetime types")
                 invalid_datetimes:list[int] = []
@@ -66,8 +65,8 @@ class DateTime(FilterType):
                                         f"the start datetime is after the end datetime at the following indexes:\n{invalid_indexes}")
                     del invalid_indexes
                     if valid:
-                        self.start_dt = startdt
-                        self.end_dt = enddt
+                        self.start_dt:Union[datetime, list[datetime]] = startdt
+                        self.end_dt:Union[datetime, list[datetime]] = enddt
 
 
             elif isinstance(start_dt, list) != isinstance(end_dt, list):
@@ -77,7 +76,6 @@ class DateTime(FilterType):
 
             elif isinstance(start_dt, datetime) and isinstance(end_dt, datetime):
                 logger.debug("using single start and end datetimes")
-                self.multi = False
                 sdt: datetime = start_dt
                 edt: datetime = end_dt
                 if not (sdt < edt):
@@ -85,8 +83,8 @@ class DateTime(FilterType):
                     MEM.queue_error("found invalid datetime combination",
                                     "the start datetime is after the end datetime")
                 if valid:
-                    self.start_dt = sdt
-                    self.end_dt = edt
+                    self.start_dt:Union[datetime, list[datetime]] = sdt
+                    self.end_dt:Union[datetime, list[datetime]] = edt
             
             self.valid = valid
                 
@@ -102,14 +100,17 @@ class DateTime(FilterType):
         else:
             dt = datetime.strptime(raw, "%Y:%m:%d %H:%M:%S") # type: ignore[arg-type]
         
-        if self.multi:
-            for st, et in zip(cast(list[datetime], self.start_dt), cast(list[datetime], self.end_dt)):
+        if isinstance(self.start_dt, datetime) and isinstance(self.end_dt, datetime):
+            if not (self.start_dt < dt < self.end_dt):
+                return False
+            else:
+                return True
+        elif isinstance(self.start_dt, list) and isinstance(self.end_dt, list):
+            for st, et in zip(self.start_dt, self.end_dt):
                 if not (st < dt < et):
                     return False
             return True
         else:
-            if not (cast(datetime, self.start_dt) < dt < cast(datetime, self.end_dt)):
-                return False
-            else:
-                return True
-        
+            logger.critical("what the fuck, this is not normal, you are a magician or something, lets just ignore this for now :')")
+            return False
+            
