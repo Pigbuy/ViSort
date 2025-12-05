@@ -28,5 +28,5 @@ class Coordinates(FilterArgType):
         
         self.coordinates = (lat,lon)
 
-    def get_dist_to(self, coordinates) -> float:
-        return distance.distance(self.coordinates, coordinates).km
+    def get_dist_to_m(self, coordinates) -> float:
+        return distance.distance(self.coordinates, coordinates).m
