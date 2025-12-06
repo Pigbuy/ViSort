@@ -49,12 +49,12 @@ class ErrorMan:
         self._get_current_tree()[name] = reason
     
     def add_error_reason(self, name: str, reason: str):
-        """adds a reason to an already existing error so there can be multiple reasons for an error to occur. This will break if there is not an error with that name already present."""
+        """adds a reason to an already existing error so there can be multiple reasons for an error to occur. This will make a new error if there is not an error with that name already present."""
         tree = self._get_current_tree()
-        if tree[name] == "":
+        if not tree[name] or tree[name] == "":
             tree[name] = reason
         else:
-            tree[name] = tree[name] + " and " + reason
+            tree[name] = tree[name] + "\nand\n" + reason
 
 
     def throw_if_errors(self):

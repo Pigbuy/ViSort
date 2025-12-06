@@ -27,7 +27,7 @@ class Loc(FilterType):
                 location = args["location"]
             else:
                 MEM.queue_error("could not validate location filter configuration",
-                                "lopcation argument is missing")
+                                "location argument is missing")
                 return
             
             if args["radius"]:
@@ -42,14 +42,16 @@ class Loc(FilterType):
                 for l in location:
                     self.location.append(Location(l))
             else:
-                MEM.queue_error("couldn't validate location filter configuration",
+                MEM.add_error_reason("could not validate location filter configuration",
                                 f"location argument is not a string or list of strings.\nInstead it's: {type(location).__name__}")
 
-            if isinstance(radius, Optional[Union[float,int,str]]):
-                self.radius:Optional[Union[float,int,str]] = radius
+            if isinstance(radius, Optional[Union[float,int]]):
+                self.radius:Optional[Union[float,int, Interval]] = radius
+            elif isinstance(radius, str):
+                self.radius:Optional[Union[float,int, Interval]] = Interval(radius)
             else:
-                MEM.queue_error("couldn't validate location filter configuration",
-                                f"radius argument is not a number or string(interval).\nInstead it's: {type(radius).__name__}")
+                MEM.add_error_reason("could not validate location filter configuration",
+                                f"radius argument is not an integer, float, string(interval) or nothing.\nInstead it's: {type(radius).__name__}")
     
     def filter(self, image: Path) -> bool:
         pillow_heif.register_heif_opener() # support heif
@@ -100,11 +102,10 @@ class Loc(FilterType):
 
 
         def in_radius(loc:Location) -> bool:
-            if self.radius and (isinstance(self.radius, float) or isinstance(self.radius, int)):
+            if self.radius and (isinstance(self.radius, Union[float, int])):
                 return loc.get_dist_to_km(image_coords) <= self.radius
-            elif self.radius and isinstance(self.radius, str):
-                i = Interval(self.radius)
-                return i.contains(loc.get_dist_to_km(image_coords))
+            elif self.radius and isinstance(self.radius, Interval):
+                return self.radius.contains(loc.get_dist_to_km(image_coords))
             else:
                 return False
 

@@ -24,14 +24,14 @@ class DateTime(FilterType):
             if args["start"]:
                 start_dt = args["start"]
             else:
-                MEM.queue_error("couldn't validate datetime filter configuration",
+                MEM.add_error_reason("couldn't validate datetime filter configuration",
                                 "start argument is missing")
                 return
             
             if args["end"]:
                 end_dt = args["end"]
             else:
-                MEM.queue_error("couldn't validate datetime filter configuration",
+                MEM.add_error_reason("couldn't validate datetime filter configuration",
                                 "end argument is missing")
                 return
             
@@ -48,7 +48,7 @@ class DateTime(FilterType):
                         invalid_datetimes.append(i)
                         all_dt = False
                 if all_dt == False:
-                    MEM.queue_error("found invalid datetime syntax in start datetime list", 
+                    MEM.add_error_reason("found invalid datetime syntax in datetime list", 
                                     f"the following indexes in the start datetime list have invalid syntax:\n{invalid_datetimes}")
                     valid = False
                 
@@ -60,7 +60,7 @@ class DateTime(FilterType):
                         invalid_datetimes.append(i)
                         all_dt = False
                 if all_dt == False:
-                    MEM.queue_error("found invalid datetime syntax in end datetime list", 
+                    MEM.add_error_reason("found invalid datetime syntax in datetime list", 
                                     f"the following indexes in the end datetime list have invalid syntax:\n{invalid_datetimes}")
                     valid = False
                 del all_dt, invalid_datetimes

@@ -21,20 +21,26 @@ import pillow_heif
 @register("coordinates")
 class Coords(FilterType):
     def __init__(self, args:dict) -> None:
+        valid = True
         logger.debug("validating coordinates filter configuration")
         with MEM.branch("validating coordinates filter configuration"):
+            coords = 0 #bind coords so type checker doesnt think its unbound
             if args["coords"]:
                 coords = args["coords"]
             else:
-                MEM.queue_error("couldn't validate coordinates filter configuration",
+                MEM.add_error_reason("couldn't validate coordinates filter configuration",
                                 "coords argument is missing")
-                return
+                valid = False
             
+            radius = 0
             if args["radius"]:
                 radius = args["radius"]
             else:
-                MEM.queue_error("couldn't validate coordinates filter configuration",
+                MEM.add_error_reason("couldn't validate coordinates filter configuration",
                                 "radius argument is missing")
+                valid = False
+            
+            if not valid:
                 return
 
             if isinstance(coords, str):
@@ -44,14 +50,16 @@ class Coords(FilterType):
                 for c in coords:
                     self.coords.append(Coordinates(c))
             else:
-                MEM.queue_error("couldn't validate coordinates filter configuration",
+                MEM.add_error_reason("couldn't validate coordinates filter configuration",
                                 f"coords argument isn't a string or a list of strings.\nInstead it's: {type(coords).__name__}")
             
-            if isinstance(radius, Union[int, float, str]):
+            if isinstance(radius, Union[int, float]):
                 self.radius = radius
+            if isinstance(radius, str):
+                self.radius = Interval(radius)
             else:
-                MEM.queue_error("couldn't validate coordinates filter configuration",
-                                f"coords argument isn't a string or a list of strings.\nInstead it's: {type(coords).__name__}")
+                MEM.add_error_reason("couldn't validate coordinates filter configuration",
+                                f"radius argument isn't an integer, float or str(interval).\nInstead it's: {type(coords).__name__}")
 
     def filter(self, image:Path) -> bool:
         pillow_heif.register_heif_opener() # support heif
@@ -103,9 +111,8 @@ class Coords(FilterType):
         def in_radius(coords:Coordinates) -> bool:
             if isinstance(self.radius, Union[float, int]):
                 return coords.get_dist_to_km(image_coords) <= self.radius
-            elif isinstance(self.radius, str):
-                i = Interval(self.radius)
-                return i.contains(coords.get_dist_to_km(image_coords))
+            elif isinstance(self.radius, Interval):
+                return self.radius.contains(coords.get_dist_to_km(image_coords))
             else:
                 return False
         

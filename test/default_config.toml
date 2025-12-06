@@ -49,7 +49,7 @@
 
 #----Sorters----
 
-[Sorter.MySorter1]
+[Sorters.MySorter1]
 priority = 0
 method = "move" # move, link, tag, name, json
 input_folder = ""
