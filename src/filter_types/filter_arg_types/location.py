@@ -21,11 +21,12 @@ class Location(FilterArgType):
                 valid = False
                 
         except GeocoderTimedOut:
+            loc = None
             MEM.queue_error("Couldn't validate location",
                             "Geocoder timed out. Check your internet or check if osm/Nominatim are down")
             valid = False
-        if valid:
-            self.location = geolocator.geocode(valid_string, addressdetails=True, exactly_one=True, language="en")  # type: ignore[arg-type]
+        if valid and loc:
+            self.location = loc  # type: ignore[arg-type]
         else:
             self.location = "Ohio" #idk lol needed a default value, hope it doesn't break anything
 

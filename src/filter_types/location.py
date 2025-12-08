@@ -1,6 +1,6 @@
 # arg type imports
-from filter_arg_types.location import Location
-from filter_arg_types.interval import Interval
+from filter_types.filter_arg_types.location import Location
+from filter_types.filter_arg_types.interval import Interval
 
 # Filter Type imports
 from filter_types.filter_type import FilterType
@@ -23,14 +23,14 @@ class Loc(FilterType):
     def __init__(self, args:dict) -> None:
         logger.debug("validating location filter configuration")
         with MEM.branch("validating location filter configuration"):
-            if args["location"]:
+            if args.get("location"):
                 location = args["location"]
             else:
                 MEM.queue_error("could not validate location filter configuration",
                                 "location argument is missing")
                 return
             
-            if args["radius"]:
+            if args.get("radius"):
                 radius = args["radius"]
             else:
                 radius = None
@@ -42,15 +42,15 @@ class Loc(FilterType):
                 for l in location:
                     self.location.append(Location(l))
             else:
-                MEM.add_error_reason("could not validate location filter configuration",
+                MEM.queue_error("could not validate location filter configuration",
                                 f"location argument is not a string or list of strings.\nInstead it's: {type(location).__name__}")
 
-            if isinstance(radius, Optional[Union[float,int]]):
+            if isinstance(radius, (float, int)) or radius is None:
                 self.radius:Optional[Union[float,int, Interval]] = radius
             elif isinstance(radius, str):
                 self.radius:Optional[Union[float,int, Interval]] = Interval(radius)
             else:
-                MEM.add_error_reason("could not validate location filter configuration",
+                MEM.queue_error("could not validate location filter configuration",
                                 f"radius argument is not an integer, float, string(interval) or nothing.\nInstead it's: {type(radius).__name__}")
     
     def filter(self, image: Path) -> bool:
@@ -102,7 +102,7 @@ class Loc(FilterType):
 
 
         def in_radius(loc:Location) -> bool:
-            if self.radius and (isinstance(self.radius, Union[float, int])):
+            if self.radius and (isinstance(self.radius, (float, int))):
                 return loc.get_dist_to_km(image_coords) <= self.radius
             elif self.radius and isinstance(self.radius, Interval):
                 return self.radius.contains(loc.get_dist_to_km(image_coords))

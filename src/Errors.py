@@ -43,18 +43,15 @@ class ErrorMan:
             yield
         finally:
             self._current_node.pop()
-
-    def queue_error(self, name: str, reason: str):
-        """Make an error at the current tree node position. This will raise an error after ErrorMan.throw_if_errors() is called"""
-        self._get_current_tree()[name] = reason
     
-    def add_error_reason(self, name: str, reason: str):
-        """adds a reason to an already existing error so there can be multiple reasons for an error to occur. This will make a new error if there is not an error with that name already present."""
+    def queue_error(self, name: str, reason: str):
+        """Make an error at the current tree node position. This will raise an error after ErrorMan.throw_if_errors() is called.
+        If an error with the same name already exists, it just adds another reason to the existing error"""
         tree = self._get_current_tree()
-        if not tree[name] or tree[name] == "":
-            tree[name] = reason
+        if not tree.get(name) or tree[name] == "":
+            tree[name] = textwrap.indent(reason, "  ")
         else:
-            tree[name] = tree[name] + "\nand\n" + reason
+            tree[name] = tree[name] + f"\n{WHITE}and{RESET}{RED}\n" + textwrap.indent(reason, "  ")
 
 
     def throw_if_errors(self):
@@ -81,7 +78,7 @@ class ErrorMan:
             err_path = error.branch_path[:-1]
             for bn in reversed(err_path):
                 err_msg += textwrap.indent(f"{WHITE}while{RESET} {CYAN}{bn}{RESET}\n", "    ")
-            err_msg += f"{WHITE}because {RED}{error.reason}{RESET}\n"
+            err_msg += f"{WHITE}because\n{RED}{error.reason}{RESET}\n"
             msg += "\n" + err_msg
 
         raise Exception(msg)

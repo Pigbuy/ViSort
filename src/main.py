@@ -7,7 +7,7 @@ from queue import Queue
 from typing import List
 import time
 
-from configuration import get_and_validate_config
+from configuration import Configuration
 from logger import logger
 
 import pillow_heif
@@ -129,7 +129,7 @@ def prepare_images() -> Queue[Path]:
 
 def main():
     
-    config = get_and_validate_config(args.config_location)
+    config = Configuration(args.config_location)
 
     # prepare folders
     for folder in folders:

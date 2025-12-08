@@ -1,9 +1,14 @@
-from geopy.geocoders import Nominatim
-from geopy.exc import GeocoderTimedOut
-geolocator = Nominatim(user_agent="geo_check")
+from pathlib import Path
+from configuration import Configuration
 
-loc = geolocator.geocode("New York City, USA", addressdetails=True, exactly_one=True, language="en")
+c = Configuration(Path("/home/felix/Documents/Programming/ViSort/test/default_config.toml"))
 
-coords = (getattr(loc, 'latitude', None), getattr(loc, 'longitude', None))
 
-print(coords)
+fg_info = [f"Name: {fg.name}; Sorter: {fg.sorter}\n Filters:{[vars(f) for f in fg.filters]}\n" for fg in c.filter_groups]
+s_names = [s.name for s in c.sorters]
+
+
+
+for i in fg_info:
+    print(i)
+print (f"Sorters:\n {s_names}\n")

@@ -1,6 +1,6 @@
 # arg type imports
-from filter_arg_types.coordinates import Coordinates
-from filter_arg_types.interval import Interval
+from filter_types.filter_arg_types.coordinates import Coordinates
+from filter_types.filter_arg_types.interval import Interval
 
 # Filter Type imports
 from filter_types.filter_type import FilterType
@@ -25,18 +25,18 @@ class Coords(FilterType):
         logger.debug("validating coordinates filter configuration")
         with MEM.branch("validating coordinates filter configuration"):
             coords = 0 #bind coords so type checker doesnt think its unbound
-            if args["coords"]:
+            if args.get("coords"):
                 coords = args["coords"]
             else:
-                MEM.add_error_reason("couldn't validate coordinates filter configuration",
+                MEM.queue_error("couldn't validate coordinates filter configuration",
                                 "coords argument is missing")
                 valid = False
             
             radius = 0
-            if args["radius"]:
+            if args.get("radius"):
                 radius = args["radius"]
             else:
-                MEM.add_error_reason("couldn't validate coordinates filter configuration",
+                MEM.queue_error("couldn't validate coordinates filter configuration",
                                 "radius argument is missing")
                 valid = False
             
@@ -50,16 +50,16 @@ class Coords(FilterType):
                 for c in coords:
                     self.coords.append(Coordinates(c))
             else:
-                MEM.add_error_reason("couldn't validate coordinates filter configuration",
+                MEM.queue_error("couldn't validate coordinates filter configuration",
                                 f"coords argument isn't a string or a list of strings.\nInstead it's: {type(coords).__name__}")
             
-            if isinstance(radius, Union[int, float]):
+            if isinstance(radius, (int, float)):
                 self.radius = radius
-            if isinstance(radius, str):
+            elif isinstance(radius, str):
                 self.radius = Interval(radius)
             else:
-                MEM.add_error_reason("couldn't validate coordinates filter configuration",
-                                f"radius argument isn't an integer, float or str(interval).\nInstead it's: {type(coords).__name__}")
+                MEM.queue_error("couldn't validate coordinates filter configuration",
+                                f"radius argument isn't an integer, float or str(interval).\nInstead it's: {type(radius).__name__}")
 
     def filter(self, image:Path) -> bool:
         pillow_heif.register_heif_opener() # support heif
@@ -109,7 +109,7 @@ class Coords(FilterType):
             return False
         
         def in_radius(coords:Coordinates) -> bool:
-            if isinstance(self.radius, Union[float, int]):
+            if isinstance(self.radius, (float, int)):
                 return coords.get_dist_to_km(image_coords) <= self.radius
             elif isinstance(self.radius, Interval):
                 return self.radius.contains(coords.get_dist_to_km(image_coords))

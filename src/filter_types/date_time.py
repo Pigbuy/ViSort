@@ -21,17 +21,17 @@ class DateTime(FilterType):
         logger.debug("validating datetime filter configuration")
         with MEM.branch("validating datetime filter configuration"):
 
-            if args["start"]:
+            if args.get("start"):
                 start_dt = args["start"]
             else:
-                MEM.add_error_reason("couldn't validate datetime filter configuration",
+                MEM.queue_error("couldn't validate datetime filter configuration",
                                 "start argument is missing")
                 return
             
-            if args["end"]:
+            if args.get("end"):
                 end_dt = args["end"]
             else:
-                MEM.add_error_reason("couldn't validate datetime filter configuration",
+                MEM.queue_error("couldn't validate datetime filter configuration",
                                 "end argument is missing")
                 return
             
@@ -48,7 +48,7 @@ class DateTime(FilterType):
                         invalid_datetimes.append(i)
                         all_dt = False
                 if all_dt == False:
-                    MEM.add_error_reason("found invalid datetime syntax in datetime list", 
+                    MEM.queue_error("found invalid datetime syntax in datetime list", 
                                     f"the following indexes in the start datetime list have invalid syntax:\n{invalid_datetimes}")
                     valid = False
                 
@@ -60,7 +60,7 @@ class DateTime(FilterType):
                         invalid_datetimes.append(i)
                         all_dt = False
                 if all_dt == False:
-                    MEM.add_error_reason("found invalid datetime syntax in datetime list", 
+                    MEM.queue_error("found invalid datetime syntax in datetime list", 
                                     f"the following indexes in the end datetime list have invalid syntax:\n{invalid_datetimes}")
                     valid = False
                 del all_dt, invalid_datetimes
@@ -107,7 +107,7 @@ class DateTime(FilterType):
                     self.start_dt:Union[datetime, list[datetime]] = sdt
                     self.end_dt:Union[datetime, list[datetime]] = edt
             
-            self.valid = valid
+            #self.valid = valid
                 
 
             

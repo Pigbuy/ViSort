@@ -2,46 +2,55 @@
 
 
 [FilterGroups.NorwayTrip]
+    sorter = "MySorter1"
     [FilterGroups.NorwayTrip.location]
     location = "Norway"
     #radius = 1 #in km, optional, shouldnt be used here because location is too broad
 
 [FilterGroups.SummerVacation]
+    sorter = "MySorter1"
     [FilterGroups.SummerVacation.datetime]
     start = [2025-07-01T00:00:00+02:00, 2025-07-01T00:00:00+02:00]
     end = [2025-09-08T00:00:00+02:00, 2025-09-08T00:00:00+02:00]
 
-[FilterGroups.Selfie]
-    [FilterGroups.Selfie.description]
-    description = "selfie"
-    [FilterGroups.Selfie.people_count]
-    count = 1
+#[FilterGroups.Selfie]
+#    sorter = "MySorter1"
+#    [FilterGroups.Selfie.description]
+#    description = "selfie"
+#    [FilterGroups.Selfie.people_count]
+#    count = 1
 
-[FilterGroups.Parents]
-    [FilterGroups.Parents.people]
-    people = ["Mom", "Dad"]
+#[FilterGroups.Parents]
+#    sorter = "MySorter1"
+#    [FilterGroups.Parents.people]
+#    people = ["Mom", "Dad"]
 
-[FilterGroups.MeInSpain]
-    [FilterGroups.MeInSpain.people]
-    people = ["Me"]
-    [FilterGroups.MeInSpain.location]
+[FilterGroups.MeInMallorca]
+    sorter = "MySorter1"
+#    [FilterGroups.MeInMallorca.people]
+#    people = ["Me"]
+    [FilterGroups.MeInMallorca.location]
     location = "Mallorca"
 
-[FilterGroups.GrownUps]
-    [FilterGroups.GrownUps.average_age]
-    average_age = ">=18"
+#[FilterGroups.GrownUps]
+#    sorter = "MySorter1"
+#    [FilterGroups.GrownUps.average_age]
+#    average_age = ">=18"
 
 [FilterGroups.AtHome]
+    sorter = "MySorter1"
     [FilterGroups.AtHome.coordinates]
     coords = "22.443889, -74.220333"
-    radius = 0.1 # in km
+    radius = 0.1
 
 [FilterGroups.NotAtHome]
+    sorter = "MySorter1"
     [FilterGroups.NotAtHome.coordinates]
     coords = "22.443889, -74.220333"
-    radius = ">0.1" # in km
+    radius = ">0.1"
 
 [FilterGroups.RingAroundGermany]
+    sorter = "MySorter1"
     [FilterGroups.RingAroundGermany.location]
     location = "Germany"
     radius = "500-1500"
@@ -52,7 +61,7 @@
 [Sorters.MySorter1]
 priority = 0
 method = "move" # move, link, tag, name, json
-input_folder = ""
-output_folder = ""
-resolve_equal_sort_method = "all" # choose_auto, choose_hierarchy, group_hierarchy
-#hierarchy = ["location", "people", ...]
+input_folder = "hi/bye"
+output_folder = "bye/hi"
+resolve_equal_sort_method = "all" # auto, filter_hierarchy, group_hierarchy
+hierarchy = ["location", "people", ] # with filter hierarchy(like here) its filter types or with group_hierarchy its a list of specific Fiter Groups
