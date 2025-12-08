@@ -18,6 +18,7 @@ import pillow_heif
 @register("datetime")
 class DateTime(FilterType):
     def __init__(self, args:dict) -> None:
+        self.TYPE = "datetime"
         logger.debug("validating datetime filter configuration")
         with MEM.branch("validating datetime filter configuration"):
 

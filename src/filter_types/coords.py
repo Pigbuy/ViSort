@@ -21,6 +21,7 @@ import pillow_heif
 @register("coordinates")
 class Coords(FilterType):
     def __init__(self, args:dict) -> None:
+        self.TYPE = "coordinates"
         valid = True
         logger.debug("validating coordinates filter configuration")
         with MEM.branch("validating coordinates filter configuration"):

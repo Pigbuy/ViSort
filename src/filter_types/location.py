@@ -21,6 +21,7 @@ import pillow_heif
 @register("location")
 class Loc(FilterType):
     def __init__(self, args:dict) -> None:
+        self.TYPE = "datetime"
         logger.debug("validating location filter configuration")
         with MEM.branch("validating location filter configuration"):
             if args.get("location"):

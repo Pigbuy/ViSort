@@ -1,7 +1,7 @@
 # Import src Modules
 from typing import Optional
 from filter_group import FilterGroup
-from sorter import Sorter
+from sorting.sorter import Sorter
 from filter_types.filter_types import get, exists, get_registry_copy
 from logger import logger
 from Errors import MEM

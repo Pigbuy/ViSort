@@ -106,17 +106,41 @@ class Sorter:
             pass
     
     class ConflictHandlers:
+        #@staticmethod
+        #def auto(conform_fgs:list[FilterGroup]) -> list[FilterGroup]:
+        #    pass
         @staticmethod
-        def auto(conform_list:list[FilterGroup]) -> list[FilterGroup]:
-            pass
+        def all(conform_fgs:list[FilterGroup]) -> list[FilterGroup]:
+            return conform_fgs
         @staticmethod
-        def all(conform_list:list[FilterGroup]) -> list[FilterGroup]:
-            return conform_list
+        def filter_hierarchy(conform_fgs:list[FilterGroup], hierarchy:list[str]) -> list[FilterGroup]:
+            highest:FilterGroup = conform_fgs[0]
+            highscore:int = 0
+            max_score = len(hierarchy)
+            for fg in conform_fgs:
+                score: int = 0
+                for f in fg.filters:
+                    score += max_score - hierarchy.index(f.TYPE)
+                if score > highscore:
+                    highscore = score
+                    highest = fg
+            return [highest]
+
         @staticmethod
-        def filter_hierarchy(conform_list:list[FilterGroup]) -> list[FilterGroup]:
-            pass
-        @staticmethod
-        def group_hierarchy(conform_list:list[FilterGroup]) -> list[FilterGroup]:
+        def group_hierarchy(conform_fgs:list[FilterGroup], hierarchy:list[str]) -> list[FilterGroup]:
+            highest: FilterGroup = conform_fgs[0]
+            highscore: int = 0
+            max_score = len(hierarchy)
+            for fg in conform_fgs:
+                score: int = 0
+                score = max_score - hierarchy.index(fg.name)
+                if score > highscore:
+                    highest = fg
+                    highscore = score
+            
+
+            return [highest]
+
             
 
 
