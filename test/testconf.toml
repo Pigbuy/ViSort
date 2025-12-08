@@ -1,0 +1,64 @@
+#----TEST CONFIGURATION: Tests all valid scenarios----
+
+#----Sorters----
+
+[Sorters.FilterHierarchySorter]
+priority = 0
+method = "move"
+input_folder = "test/Input"
+output_folder = "test/Sorted"
+resolve_equal_sort_method = "filter_hierarchy"
+hierarchy = ["location", "datetime", "coordinates"]
+
+[Sorters.GroupHierarchySorter]
+priority = 1
+method = "link"
+input_folder = "test/Input"
+output_folder = "test/Sorted"
+resolve_equal_sort_method = "group_hierarchy"
+hierarchy = ["LocationGroup", "TimeGroup"]
+
+[Sorters.AutoSorter]
+priority = 2
+method = "tag"
+input_folder = "test/Input"
+output_folder = "test/Sorted"
+resolve_equal_sort_method = "choose_auto"
+
+#----FilterGroups----
+
+# Test 1: FilterGroup with single filter (location)
+[FilterGroups.LocationGroup]
+    sorter = "GroupHierarchySorter"
+    [FilterGroups.LocationGroup.location]
+    location = "Norway"
+
+# Test 2: FilterGroup with single filter (datetime)
+[FilterGroups.TimeGroup]
+    sorter = "GroupHierarchySorter"
+    [FilterGroups.TimeGroup.datetime]
+    start = [2025-07-01T00:00:00+02:00, 2025-07-01T00:00:00+02:00]
+    end = [2025-09-08T00:00:00+02:00, 2025-09-08T00:00:00+02:00]
+
+# Test 3: FilterGroup with single filter (coordinates)
+[FilterGroups.CoordinatesGroup]
+    sorter = "FilterHierarchySorter"
+    [FilterGroups.CoordinatesGroup.coordinates]
+    coords = "22.443889, -74.220333"
+    radius = 0.1
+
+# Test 4: FilterGroup with multiple filters
+[FilterGroups.MultiFilterGroup]
+    sorter = "FilterHierarchySorter"
+    [FilterGroups.MultiFilterGroup.location]
+    location = "Germany"
+    radius = "500-1500"
+    [FilterGroups.MultiFilterGroup.datetime]
+    start = [2025-06-01T00:00:00+02:00, 2025-06-01T00:00:00+02:00]
+    end = [2025-08-31T00:00:00+02:00, 2025-08-31T00:00:00+02:00]
+
+# Test 5: FilterGroup using AutoSorter (no hierarchy requirements)
+[FilterGroups.SimpleGroup]
+    sorter = "AutoSorter"
+    [FilterGroups.SimpleGroup.location]
+    location = "Spain"
