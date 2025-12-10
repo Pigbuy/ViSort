@@ -10,9 +10,9 @@ import json
 
 from filter_types.filter_types import get_registry_copy
 
-from conflict_handlers import handle_conflict, HANDLERS
-from sorting_methods import sort as actually_sort
-from sorting_methods import SORTING_METHODS
+from sorting.conflict_handlers import handle_conflict, HANDLERS
+from sorting.sorting_methods import sort as actually_sort
+from sorting.sorting_methods import SORTING_METHODS
 
 
 class Sorter:
@@ -150,5 +150,7 @@ class Sorter:
 
 
 
-    def sort(self, filter_group_names:list[str], image_path: Path):
+    def sort(self):
         pillow_heif.register_heif_opener() # support heif
+
+        

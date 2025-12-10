@@ -5,7 +5,7 @@ from typing import Callable, Any, Optional
 
 HANDLERS: dict[str, Callable[..., Any]] = {}
 
-def register(name: Optional[str] = None):
+def register_ch(name: Optional[str] = None):
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         HANDLERS[name or func.__name__] = func
         return func
@@ -15,20 +15,20 @@ def register(name: Optional[str] = None):
 #def auto(conform_fgs:list[FilterGroup]) -> list[FilterGroup]:
 #    pass
 
-@register("all")
+@register_ch("all")
 def all(conform_fgs:list[FilterGroup], hierarchy:Optional[list[str]] = None) -> list[FilterGroup]:
     return conform_fgs
 
-@register("first")
+@register_ch("first")
 def first(conform_fgs:list[FilterGroup], hierarchy:Optional[list[str]] = None) -> list[FilterGroup]:
     return [conform_fgs[0]]
 
-@register("random")
+@register_ch("random")
 def random(conform_fgs:list[FilterGroup], hierarchy:Optional[list[str]] = None) -> list[FilterGroup]:
     index = rand.randrange(0, len(conform_fgs)-1)
     return [conform_fgs[index]]
 
-@register("filter_hierarchy")
+@register_ch("filter_hierarchy")
 def filter_hierarchy(conform_fgs:list[FilterGroup], hierarchy:list[str]) -> list[FilterGroup]:
     highest:FilterGroup = conform_fgs[0]
     highscore:int = 0
@@ -42,7 +42,7 @@ def filter_hierarchy(conform_fgs:list[FilterGroup], hierarchy:list[str]) -> list
             highest = fg
     return [highest]
 
-@register("group_hierarchy")
+@register_ch("group_hierarchy")
 def group_hierarchy(conform_fgs:list[FilterGroup], hierarchy:list[str]) -> list[FilterGroup]:
     highest: FilterGroup = conform_fgs[0]
     highscore: int = 0

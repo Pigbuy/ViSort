@@ -9,13 +9,13 @@ from typing import Callable, Any, Optional
 
 SORTING_METHODS: dict[str, Callable[..., Any]] = {}
 
-def register(name: Optional[str] = None):
+def register_sm(name: Optional[str] = None):
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         SORTING_METHODS[name or func.__name__] = func
         return func
     return decorator
 
-
+@register_sm("move")
 def move(filter_group_names:list[str], image_path: Path, output_folder:Path):
     """makes (a) subfolder(s) in the output_folder named according to the filter_group_names(or just check if they exist and are writable if it already exists), moves copies of the original image in those folders and then deletes the original image folder"""
     for f in filter_group_names:
@@ -24,6 +24,7 @@ def move(filter_group_names:list[str], image_path: Path, output_folder:Path):
         shutil.copy2(image_path,fg_folder)
     os.remove(image_path)
 
+@register_sm("link")
 def link(filter_group_names:list[str], image_path: Path, output_folder:Path):
     """makes (a) subfolder(s) in the output_folder named according to the filter_group_names(or just check if they exist and are writable if it already exists) and places a symlink of the original image in those folders."""
     for f in filter_group_names:
@@ -31,6 +32,7 @@ def link(filter_group_names:list[str], image_path: Path, output_folder:Path):
         fg_folder.mkdir(parents=True, exist_ok=True)
         os.symlink(image_path.resolve(), fg_folder / image_path.name)
 
+@register_sm("tag")
 def tag(filter_group_names:list[str], image_path: Path, output_folder:Optional[Path] = None):
     """appends filter_group_names seperated with commas to the exif metadata description"""
     img = Image.open(image_path)
@@ -39,12 +41,14 @@ def tag(filter_group_names:list[str], image_path: Path, output_folder:Optional[P
     exif_data[270] = tags_str  # 270 is ImageDescription tag
     img.save(image_path, exif=exif_data)
 
+@register_sm("name")
 def name(filter_group_names:list[str], image_path: Path, output_folder:Optional[Path] = None):
     """changes the image file name to: `{filter_group_names(seperated with underscores)}{index of picture with the same filter_group_names combination}`"""
     new_name = "_".join(filter_group_names) + image_path.suffix
     new_path = image_path.parent / new_name
     image_path.rename(new_path)
 
+@register_sm("json")
 def json(filter_group_names:list[str], image_path: Path, output_folder:Path):
     """Create/update ViSort.json(located in the output_folder) with the image added to the given filter groups."""
     json_path = output_folder / "ViSort.json"
@@ -63,6 +67,7 @@ def json(filter_group_names:list[str], image_path: Path, output_folder:Path):
     with open(json_path, "w") as f:
         jsn.dump(data, f, indent=2)
 
+@register_sm("none")
 def none(filter_group_names:Optional[list[str]] = None, image_path:Optional[Path] = None, output_folder:Optional[Path] = None):
     pass
 
