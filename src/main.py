@@ -1,16 +1,20 @@
 import argparse
 import os
 from pathlib import Path
+
+from tqdm import tqdm
 from PIL import Image
 import threading
 from queue import Queue
-from typing import List
+from typing import List, cast
 import time
 
 from configuration import Configuration
 from logger import logger
+from Errors import MEM
 
 import pillow_heif
+from sorting.sorter import Sorter
 pillow_heif.register_heif_opener()
 
 
@@ -20,28 +24,28 @@ def build_parser() -> argparse.ArgumentParser:
     # config
     parser.add_argument(
         "-c", "--config-location",
-        default=".config.ini",
-        help="Path to config file (default: .config.ini)"
+        default="config.toml",
+        help="Path to config file (default: config.toml)"
     )
 
     # folders
-    parser.add_argument("-i", "--input-location", default=".Input/", help="Input folder")
-    parser.add_argument("-s", "--sorted-location", default=".Sorted/", help="Sorted folder")
-    parser.add_argument("-a", "--attributes-location", default=".Attributes/", help="Attributes folder")
-    parser.add_argument("-f", "--faces-location", default=".Faces/", help="Faces folder")
-    parser.add_argument("--fc", "--face-cache-location", dest="face_cache_location",
-                        default=".FaceCache/", help="Face cache folder")
+#    parser.add_argument("-i", "--input-location", default=".Input/", help="Input folder")
+#    parser.add_argument("-s", "--sorted-location", default=".Sorted/", help="Sorted folder")
+#    parser.add_argument("-a", "--attributes-location", default=".Attributes/", help="Attributes folder")
+#    parser.add_argument("-f", "--faces-location", default=".Faces/", help="Faces folder")
+#    parser.add_argument("--fc", "--face-cache-location", dest="face_cache_location",
+#                        default=".FaceCache/", help="Face cache folder")
 
     # flags
-    parser.add_argument("--sr", "--single-run", dest="single_run",
-                        action="store_true", help="Run once and exit")
-    parser.add_argument("-m", "--monitor-mode", action="store_true", help="Enable monitor mode")
-    parser.add_argument("--nfc", "--no-face-caching", dest="no_face_caching",
-                        action="store_true", help="Disable face caching")
-    parser.add_argument("--nfr", "--no-face-recognition", dest="no_face_recognition",
-                        action="store_true", help="Disable face recognition")
-    parser.add_argument("--nac", "--no-auto-convert", dest="no_auto_convert",
-                        action="store_true", help="Do not auto-convert non-JPEGs")
+#    parser.add_argument("--sr", "--single-run", dest="single_run",
+#                        action="store_true", help="Run once and exit")
+#    parser.add_argument("-m", "--monitor-mode", action="store_true", help="Enable monitor mode")
+#    parser.add_argument("--nfc", "--no-face-caching", dest="no_face_caching",
+#                        action="store_true", help="Disable face caching")
+#    parser.add_argument("--nfr", "--no-face-recognition", dest="no_face_recognition",
+#                        action="store_true", help="Disable face recognition")
+#    parser.add_argument("--nac", "--no-auto-convert", dest="no_auto_convert",
+#                        action="store_true", help="Do not auto-convert non-JPEGs")
     
     #noconf_mode = "noconf", ""
     #noconf_auto_word_count = "nawc", "5, "number""
@@ -49,110 +53,53 @@ def build_parser() -> argparse.ArgumentParser:
 
     return parser
 
-args = build_parser().parse_args()
+def sort_sorters_by_priority(config:Configuration) -> dict[int, list[Sorter]]:
+    priority_sorter_list:dict[int,list[Sorter]] = {}
+    def add(key: int, value):
+        if key not in priority_sorter_list:
+            priority_sorter_list[key] = []
+        priority_sorter_list[key].append(value)
+
+    for s in config.sorters:
+        add(s.priority,s)
     
-folders = [
-    args.input_location,
-    args.sorted_location,
-    args.attributes_location,
-    args.faces_location,
-    args.face_cache_location,
-]
+    return dict(sorted(priority_sorter_list.items()))
 
-def prepare_images() -> Queue[Path]:
-    def validate_image(img: Image.Image) -> bool:
-        try:
-            img.verify()
-            return True
-        except Exception:
-            return False
-
-    # sort images into jpeg and non-jpeg
-    input_folder = Path(args.input_location)
-    jpegs: list[Path] = []
-    non_jpegs: list[Path] = []
-    
-    for f in input_folder.iterdir():
-        if f.is_file():
-            with Image.open(f) as oi:
-                if validate_image(oi):
-                    logger.debug(f"{f} is a valid image")
-                    if oi.format == "JPEG":
-                        jpegs.append(f)
-                    else:
-                        non_jpegs.append(f)
-                else:
-                    logger.warning(f"{f} is not a valid image")
-
-    logger.info(f"found {len(jpegs)} jpeg images")
-    non_jpeg_amount = len(non_jpegs)
-    logger.info(f"found {non_jpeg_amount} non-jpeg images")
-
-    # Create thread-safe queue for images and conversion status flag
-    image_queue: Queue[Path] = Queue()
-    conversion_complete = threading.Event()
-    
-    # Add all JPEGs to the queue first
-    for jpeg in jpegs:
-        image_queue.put(jpeg)
-    logger.debug("added jpegs to queue")
-
-    # Handle image conversion in a separate thread if needed
-    if not args.no_auto_convert and non_jpeg_amount > 0:
-        def convert_images(non_jpeg_paths: List[Path], queue: Queue[Path]):
-            logger.info(f"converting {len(non_jpeg_paths)} non jpeg images to jpeg")
-            for index, ip in enumerate(non_jpeg_paths):
-                try:
-                    with Image.open(ip) as oi:
-                        ci = oi.convert("RGB")
-                        new_path = ip.with_suffix(".jpg")
-                        ci.save(new_path, "JPEG")
-                        ip.unlink(missing_ok=True)
-                        queue.put(new_path)
-                        logger.info(f"converted {index+1}/{non_jpeg_amount} non-jpegs to jpeg")
-                except Exception as e:
-                    logger.error(f"Failed to convert {ip}: {str(e)}")
-            conversion_complete.set()
-            logger.info("Image conversion completed")
-
-        conversion_thread = threading.Thread(
-            target=convert_images, 
-            args=(non_jpegs, image_queue),
-            name="ImageConverter"
-        )
-        conversion_thread.start()
-    else:
-        logger.info("all images are already jpegs, no conversion needed")
-        conversion_complete.set()
-    
-    return image_queue
+        
 
 def main():
-    
-    config = Configuration(args.config_location)
+    args = build_parser().parse_args()
+    try:
+        cp = Path(args.config_location)
+        if not cp.exists():
+            MEM.queue_error("could not read configuration file",
+                            f"configuration file \"{cp}\" does not exist")
+    except:
+        MEM.queue_error("could not read configuration file",
+                        f"could not make a path object from the specified path or couldn't verify it's existence")
+    MEM.throw_if_errors()
 
-    # prepare folders
-    for folder in folders:
-        os.makedirs(folder, exist_ok=True)
-    logger.debug("all folders created or existed already")
+    config:Configuration = Configuration(Path(args.config_location)) # parse the configuration file and throw errors if anything is wrong
 
-    image_queue = prepare_images()
+    psl:dict[int, list[Sorter]] = sort_sorters_by_priority(config=config)
 
-    
+    for priority, sorters in tqdm(psl.items(),
+                                  desc=f"sorter priorities",
+                                  total=len(psl),
+                                  position=0, unit="priorities"):
 
-#    for image in image_queue:
-#        for category in config["Categories"]["category"]:
-#    while True:
-#        try:
-#            image_path = image_queue.get_nowait()
-#            # Process the image
-#            image_queue.task_done()
-#        except Queue.Empty:
-#            if conversion_complete.is_set():
-#                break  # No more images will be added
-#            # Queue is temporarily empty but more images might come
-#            time.sleep(0.1)  # Wait a bit before checking again
-    
+        for sorter in cast(list[Sorter],
+                           tqdm(sorters,
+                                desc=f"sorters of priority {priority}",
+                                total=len(sorters),
+                                position=1,
+                                unit="sorters")):
+            sorter.sort()
+
+
+
+
+
 
 
 if __name__ == "__main__":

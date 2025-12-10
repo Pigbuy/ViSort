@@ -62,3 +62,7 @@ resolve_equal_sort_method = "choose_auto"
     sorter = "AutoSorter"
     [FilterGroups.SimpleGroup.location]
     location = "Spain"
+
+
+
+[Sorter.]

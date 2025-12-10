@@ -13,28 +13,17 @@ class FilterGroup():
             self.name = name
             self.filters:list[FilterType] = []
 
-            if "sorter" not in filters.keys():
-                MEM.queue_error("could not validate Filter Group",
-                                f"the required \"sorter\" field is missing in the {name} Filter Group")
-                
-
-            for fname, args in filters.items():
-                if exists(fname) and (fname != "sorter"):
-                    Ft = get(fname)
+            for f_type, args in filters.items():
+                if exists(f_type):
+                    Ft = get(f_type)
                     if isinstance(args, dict):
                         self.filters.append(Ft(args))
                     else:
                         MEM.queue_error("could not parse Filter",
-                                        f"Filter does not have arguments. Instead its an object of type: {type(args).__name__}")
-                elif fname == "sorter":
-                    if isinstance(args, (str, list)):
-                        self.sorter:Union[str, list] = args
-                    else:
-                        MEM.queue_error("could not validate Filter Group",
-                                        f"the \"sorter\" Filter Group attribute is not of type string or a list but of type {type(args).__name__}")
+                                        f"Filter does not have arguments. Instead its an object of the following type: {type(args).__name__}")
                 else:
                     MEM.queue_error("could not parse Filter",
-                                    f"Filter Type \"{fname}\" doesn't exist")
+                                    f"Filter Type \"{f_type}\" doesn't exist")
 
     def eval_importance(self):
         pass

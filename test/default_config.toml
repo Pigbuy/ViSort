@@ -1,67 +1,54 @@
-#----Filters----
-
-
-[FilterGroups.NorwayTrip]
-    sorter = "MySorter1"
-    [FilterGroups.NorwayTrip.location]
-    location = "Norway"
-    #radius = 1 #in km, optional, shouldnt be used here because location is too broad
-
-[FilterGroups.SummerVacation]
-    sorter = "MySorter1"
-    [FilterGroups.SummerVacation.datetime]
-    start = [2025-07-01T00:00:00+02:00, 2025-07-01T00:00:00+02:00]
-    end = [2025-09-08T00:00:00+02:00, 2025-09-08T00:00:00+02:00]
-
-#[FilterGroups.Selfie]
-#    sorter = "MySorter1"
-#    [FilterGroups.Selfie.description]
-#    description = "selfie"
-#    [FilterGroups.Selfie.people_count]
-#    count = 1
-
-#[FilterGroups.Parents]
-#    sorter = "MySorter1"
-#    [FilterGroups.Parents.people]
-#    people = ["Mom", "Dad"]
-
-[FilterGroups.MeInMallorca]
-    sorter = "MySorter1"
-#    [FilterGroups.MeInMallorca.people]
-#    people = ["Me"]
-    [FilterGroups.MeInMallorca.location]
-    location = "Mallorca"
-
-#[FilterGroups.GrownUps]
-#    sorter = "MySorter1"
-#    [FilterGroups.GrownUps.average_age]
-#    average_age = ">=18"
-
-[FilterGroups.AtHome]
-    sorter = "MySorter1"
-    [FilterGroups.AtHome.coordinates]
-    coords = "22.443889, -74.220333"
-    radius = 0.1
-
-[FilterGroups.NotAtHome]
-    sorter = "MySorter1"
-    [FilterGroups.NotAtHome.coordinates]
-    coords = "22.443889, -74.220333"
-    radius = ">0.1"
-
-[FilterGroups.RingAroundGermany]
-    sorter = "MySorter1"
-    [FilterGroups.RingAroundGermany.location]
-    location = "Germany"
-    radius = "500-1500"
-
-
-#----Sorters----
-
+#----MySorter1 Sorter----
 [Sorters.MySorter1]
-priority = 0
-method = "move" # move, link, tag, name, json
-input_folder = "hi/bye"
-output_folder = "bye/hi"
-resolve_equal_sort_method = "all" # auto, filter_hierarchy, group_hierarchy
-hierarchy = ["location", "people", ] # with filter hierarchy(like here) its filter types or with group_hierarchy its a list of specific Fiter Groups
+    priority = 0
+    method = "move" # move, link, tag, name, json, none
+    input_folder = "hi/bye"
+    output_folder = "bye/hi"
+    resolve_equal_sort_method = "all" # auto, filter_hierarchy, group_hierarchy
+    hierarchy = ["location", "people", ] # with filter hierarchy(like here) its filter types or with group_hierarchy its a list of specific Fiter Groups
+
+    [Sorters.MySorter1.FilterGroups.NorwayTrip]
+        [Sorters.MySorter1.FilterGroups.NorwayTrip.location]
+        location = "Norway"
+        #radius = 1 #in km, optional, shouldnt be used here because location is too broad
+
+    [Sorters.MySorter1.FilterGroups.SummerVacation]
+        [Sorters.MySorter1.FilterGroups.SummerVacation.datetime]
+        start = [2025-07-01T00:00:00+02:00, 2025-07-01T00:00:00+02:00]
+        end = [2025-09-08T00:00:00+02:00, 2025-09-08T00:00:00+02:00]
+
+    #[Sorters.MySorter1.FilterGroups.Selfie]
+    #    [Sorters.MySorter1.FilterGroups.Selfie.description]
+    #    description = "selfie"
+    #    [Sorters.MySorter1.FilterGroups.Selfie.people_count]
+    #    count = 1
+
+    #[Sorters.MySorter1.FilterGroups.Parents]
+    #    [Sorters.MySorter1.FilterGroups.Parents.people]
+    #    people = ["Mom", "Dad"]
+
+    [Sorters.MySorter1.FilterGroups.MeInMallorca]
+    #    [Sorters.MySorter1.FilterGroups.MeInMallorca.people]
+    #    people = ["Me"]
+        [Sorters.MySorter1.FilterGroups.MeInMallorca.location]
+        location = "Mallorca"
+
+    #[Sorters.MySorter1.FilterGroups.GrownUps]
+    #    sorter = "MySorter1"
+    #    [Sorters.MySorter1.FilterGroups.GrownUps.average_age]
+    #    average_age = ">=18"
+
+    [Sorters.MySorter1.FilterGroups.AtHome]
+        [Sorters.MySorter1.FilterGroups.AtHome.coordinates]
+        coords = "22.443889, -74.220333"
+        radius = 0.1
+
+    [Sorters.MySorter1.FilterGroups.NotAtHome]
+        [Sorters.MySorter1.FilterGroups.NotAtHome.coordinates]
+        coords = "22.443889, -74.220333"
+        radius = ">0.1"
+
+    [Sorters.MySorter1.FilterGroups.RingAroundGermany]
+        [Sorters.MySorter1.FilterGroups.RingAroundGermany.location]
+        location = "Germany"
+        radius = "500-1500"

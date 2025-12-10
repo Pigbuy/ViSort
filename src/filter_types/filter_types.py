@@ -3,11 +3,11 @@ from filter_types.filter_type import FilterType
 
 # Runtime registry for FilterType subclasses. Modules should call
 # `register("name")(Cls)` to register filter types.
-REGISTRY: dict[str, Type[FilterType]] = {}
+FILTER_TYPES: dict[str, Type[FilterType]] = {}
 
 def register(name: str) -> Callable[[Type[FilterType]], Type[FilterType]]:
     def decorator(cls: Type[FilterType]) -> Type[FilterType]:
-        REGISTRY[name] = cls
+        FILTER_TYPES[name] = cls
         return cls
     return decorator
 
@@ -23,7 +23,7 @@ def get(name: str) -> Type[FilterType]:
     #from . import gender_fraction
     #from . import average_age
     #from . import descripion
-    return REGISTRY[name]
+    return FILTER_TYPES[name]
 
 def exists(name:str) -> bool:
     # Import all filter types to register them
@@ -37,7 +37,7 @@ def exists(name:str) -> bool:
     #from . import gender_fraction
     #from . import average_age
     #from . import descripion
-    return name in REGISTRY.keys()
+    return name in FILTER_TYPES.keys()
 
 def get_registry_copy() -> dict[str, type[FilterType]]:
     from . import location
@@ -50,4 +50,4 @@ def get_registry_copy() -> dict[str, type[FilterType]]:
     #from . import gender_fraction
     #from . import average_age
     #from . import descripion
-    return REGISTRY.copy()
+    return FILTER_TYPES.copy()
