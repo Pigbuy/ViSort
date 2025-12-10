@@ -2,6 +2,12 @@ from pathlib import Path
 from logger import logger
 from Errors import MEM
 from filter_group import FilterGroup
+import shutil
+import os
+from PIL import Image
+from PIL.Image import Exif
+import pillow_heif
+import json
 
 
 class Sorter:
@@ -25,7 +31,7 @@ class Sorter:
             
             # validate and parse method
             method = config.get("method")
-            valid_methods = {"move", "link", "tag", "name", "json"}
+            valid_methods = {"move", "link", "tag", "name", "json", "none"}
             if method is None:
                 MEM.queue_error("could not parse Sorter configuration",
                                 "Sorter is missing required field: method")
@@ -90,19 +96,60 @@ class Sorter:
 
     class SortingMethods:
         @staticmethod
-        def move():
-            pass
+        def move(filter_group_names:list[str], image_path: Path, output_folder:Path):
+            """makes (a) subfolder(s) in the output_folder named according to the filter_group_names(or just check if they exist and are writable if it already exists), moves copies of the original image in those folders and then deletes the original image folder"""
+            for f in filter_group_names:
+                fg_folder = output_folder / f
+                fg_folder.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(image_path,fg_folder)
+            os.remove(image_path)
+        
         @staticmethod
-        def link():
-            pass
+        def link(filter_group_names:list[str], image_path: Path, output_folder:Path):
+            """makes (a) subfolder(s) in the output_folder named according to the filter_group_names(or just check if they exist and are writable if it already exists) and places a symlink of the original image in those folders."""
+            for f in filter_group_names:
+                fg_folder = output_folder / f
+                fg_folder.mkdir(parents=True, exist_ok=True)
+                os.symlink(image_path.resolve(), fg_folder / image_path.name)
+        
         @staticmethod
-        def tag():
-            pass
+        def tag(filter_group_names:list[str], image_path: Path):
+            """appends filter_group_names seperated with commas to the exif metadata description"""
+            img = Image.open(image_path)
+            exif_data = img.getexif()
+            tags_str = ", ".join(filter_group_names)
+            exif_data[270] = tags_str  # 270 is ImageDescription tag
+            img.save(image_path, exif=exif_data)
+        
         @staticmethod
-        def name():
-            pass
+        def name(filter_group_names:list[str], image_path: Path):
+            """changes the image file name to: `{filter_group_names(seperated with underscores)}{index of picture with the same filter_group_names combination}`"""
+            new_name = "_".join(filter_group_names) + image_path.suffix
+            new_path = image_path.parent / new_name
+            image_path.rename(new_path)
+        
         @staticmethod
-        def json():
+        def json(filter_group_names:list[str], image_path: Path, output_folder:Path):
+            """Create/update ViSort.json(located in the output_folder) with the image added to the given filter groups."""
+            json_path = output_folder / "ViSort.json"
+            image_str = str(image_path)
+
+            if json_path.exists():
+                with open(json_path) as f:
+                    data = json.load(f)
+            else:
+                data = {}
+
+            for fgn in filter_group_names:
+                data.setdefault(fgn, [])
+                data[fgn].append(image_str)
+            
+            with open(json_path, "w") as f:
+                json.dump(data, f, indent=2)
+
+        @staticmethod
+        def none():
+            """doesn't sort anything"""
             pass
     
     class ConflictHandlers:
@@ -146,4 +193,5 @@ class Sorter:
 
 
     def sort(self):
+        pillow_heif.register_heif_opener() # support heif
         pass
