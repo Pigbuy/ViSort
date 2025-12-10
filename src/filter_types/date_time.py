@@ -113,6 +113,7 @@ class DateTime(FilterType):
 
             
     def filter(self, image:Path) -> bool:
+        pillow_heif.register_heif_opener() # support heif
         img = Image.open(image)
         exif = img.getexif()
         raw = exif.get(306)  # "2024:11:29 15:23:10"
