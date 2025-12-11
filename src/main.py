@@ -94,7 +94,9 @@ def main():
                                 total=len(sorters),
                                 position=1,
                                 unit="sorters")):
-            sorter.sort()
+            with MEM.branch(f"sorting using the {sorter.name} Sorter"):
+                sorter.verify_input_files()
+                sorter.sort()
 
 
 

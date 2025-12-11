@@ -1,4 +1,5 @@
 from pathlib import Path
+from queue import Queue
 from logger import logger
 from Errors import MEM
 from filter_group import FilterGroup
@@ -22,6 +23,7 @@ class Sorter:
         logger.debug(f"validating {name} Sorter")
         with MEM.branch(f"validating {name} Sorter"):
             self.name = name
+            self.queue:list[Path] = []
             
             # validate and parse priority
             priority = config.get("priority")
@@ -33,6 +35,7 @@ class Sorter:
                                 f"Sorter priority must be an integer, not {type(priority).__name__}")
             elif isinstance(priority, int):
                 self.priority: int = priority
+
 
             # validate and parse method
             method = config.get("method")
@@ -48,6 +51,7 @@ class Sorter:
             else:
                 self.method: str = method
             
+
             # validate and parse input_folder
             input_folder = config.get("input_folder")
             if input_folder is None:
@@ -57,8 +61,19 @@ class Sorter:
                 MEM.queue_error("could not parse Sorter configuration",
                                 f"Sorter input_folder must be a string, not {type(input_folder).__name__}")
             else:
-                self.input_folder: Path = Path(input_folder)
+                input_folder = Path(input_folder)
+                if input_folder.exists():
+                    if input_folder.is_dir():
+                        self.input_folder: Path = input_folder
+                    else:
+                        MEM.queue_error("could not validate Sorter configuration",
+                                        f"the specified input folder '{input_folder}' is not a folder")
             
+                else:
+                    MEM.queue_error("could not validate Sorter configuration",
+                                    f"the specified input folder '{input_folder}' does not exist")
+            
+
             # validate and parse output_folder
             output_folder = config.get("output_folder")
             if output_folder is None:
@@ -70,6 +85,7 @@ class Sorter:
             else:
                 self.output_folder: Path = Path(output_folder)
             
+
             # validate and parse resolve_equal_sort_method
             resolve_method = config.get("resolve_equal_sort_method")
             if resolve_method is None:
@@ -111,7 +127,7 @@ class Sorter:
             elif not isinstance(hierarchy, list):
                 MEM.queue_error("could not parse Sorter configuration",
                                 f"Sorter hierarchy must be a list, not {type(hierarchy).__name__}")
-            else:
+            elif isinstance(hierarchy, list):
 
                 with MEM.branch("validating Sorter hierarchy"):
                     fg_names = [fg.name for fg in self.filter_groups]
@@ -147,10 +163,44 @@ class Sorter:
                             else:
                                 MEM.queue_error("could not validate Group hierarchy",
                                                 f"the hierarchy is not a list of strings but has an object of type \"{type(g).__name__}\" at index {i}")
+                    else:
+                        logger.warning(f"'{self.name}' defines a hierarchy, even though 'resolve_equal_sort_method' is not 'group_hierarchy' or 'fiter_hierarchy'. Ignoring...")
 
 
+    def verify_input_files(self):
+        pillow_heif.register_heif_opener() # support heif
+        with MEM.branch(f"validating the input files located in the input folder defined in the {self.name} Sorter"):
+            files = [f for f in self.input_folder.iterdir() if f.is_file()]
+            for file in files:
+                try:
+                    with Image.open(file) as img:
+                        img.verify()
+                    self.queue.append(file)
+                except:
+                    MEM.queue_error("could not verify all files in input folder",
+                                    f"File '{file}' is not compatible")
+        MEM.throw_if_errors()
 
     def sort(self):
         pillow_heif.register_heif_opener() # support heif
 
-        
+        for img in self.queue:
+            conform_fgs:list[FilterGroup] = []
+            
+            for fg in self.filter_groups:
+                if fg.filter_all(img):
+                    conform_fgs.append(fg)
+
+            if len(conform_fgs) > 1:
+                conform_fgs = handle_conflict(handler_name = self.resolve_equal_sort_method,
+                                              conform_fgs  = conform_fgs,
+                                              hierarchy    = self.hierarchy)
+            if len(conform_fgs) == 0:
+                conform_fgs.append(FilterGroup(name="other", filters={}))
+
+            actually_sort(method_name        = self.method,
+                          filter_group_names = [cf.name for cf in conform_fgs],
+                          image_path         = img,
+                          output_folder      = self.output_folder)
+                
+                

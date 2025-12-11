@@ -1,3 +1,4 @@
+from pathlib import Path
 import typing
 from Errors import MEM
 from logger import logger
@@ -25,10 +26,7 @@ class FilterGroup():
                     MEM.queue_error("could not parse Filter",
                                     f"Filter Type \"{f_type}\" doesn't exist")
 
-    def eval_importance(self):
-        pass
-
-    def filter_all(self, image) -> bool:
+    def filter_all(self, image:Path) -> bool:
         for f in self.filters:
             if not f.filter(image):
                 return False
