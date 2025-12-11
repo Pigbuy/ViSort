@@ -5,7 +5,7 @@ from filter_types.filter_type import FilterType
 # `register("name")(Cls)` to register filter types.
 FILTER_TYPES: dict[str, Type[FilterType]] = {}
 
-def register(name: str) -> Callable[[Type[FilterType]], Type[FilterType]]:
+def register_ft(name: str) -> Callable[[Type[FilterType]], Type[FilterType]]:
     def decorator(cls: Type[FilterType]) -> Type[FilterType]:
         FILTER_TYPES[name] = cls
         return cls

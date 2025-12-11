@@ -4,7 +4,7 @@ from filter_types.filter_arg_types.interval import Interval
 
 # Filter Type imports
 from filter_types.filter_type import FilterType
-from filter_types.filter_types import register
+from filter_types.filter_types import register_ft
 
 # src modules imports
 from Errors import MEM
@@ -18,7 +18,7 @@ from typing import Optional, Union
 from PIL import Image
 import pillow_heif
 
-@register("coordinates")
+@register_ft("coordinates")
 class Coords(FilterType):
     def __init__(self, args:dict) -> None:
         self.TYPE = "coordinates"

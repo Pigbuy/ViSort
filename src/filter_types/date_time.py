@@ -1,6 +1,6 @@
 # Filter Type imports
 from filter_types.filter_type import FilterType
-from filter_types.filter_types import register
+from filter_types.filter_types import register_ft
 
 # src modules imports
 from Errors import MEM
@@ -15,7 +15,7 @@ from datetime import datetime
 from PIL import Image
 import pillow_heif
 
-@register("datetime")
+@register_ft("datetime")
 class DateTime(FilterType):
     def __init__(self, args:dict) -> None:
         self.TYPE = "datetime"
