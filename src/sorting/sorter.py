@@ -61,17 +61,7 @@ class Sorter:
                 MEM.queue_error("could not parse Sorter configuration",
                                 f"Sorter input_folder must be a string, not {type(input_folder).__name__}")
             else:
-                input_folder = Path(input_folder)
-                if input_folder.exists():
-                    if input_folder.is_dir():
-                        self.input_folder: Path = input_folder
-                    else:
-                        MEM.queue_error("could not validate Sorter configuration",
-                                        f"the specified input folder '{input_folder}' is not a folder")
-            
-                else:
-                    MEM.queue_error("could not validate Sorter configuration",
-                                    f"the specified input folder '{input_folder}' does not exist")
+                self.input_folder: Path = Path(input_folder)
             
 
             # validate and parse output_folder
@@ -169,7 +159,15 @@ class Sorter:
 
     def verify_input_files(self):
         pillow_heif.register_heif_opener() # support heif
-        with MEM.branch(f"validating the input files located in the input folder defined in the {self.name} Sorter"):
+        with MEM.branch(f"validating the input folder defined in the {self.name} Sorter and its files"):
+            if self.input_folder.exists():
+                if not self.input_folder.is_dir():
+                    MEM.queue_error("could not validate Sorter configuration",
+                                    f"the specified input folder '{self.input_folder}' is not a folder")
+            else:
+                MEM.queue_error("could not validate Sorter configuration",
+                                f"the specified input folder '{self.input_folder}' does not exist")
+
             files = [f for f in self.input_folder.iterdir() if f.is_file()]
             for file in files:
                 try:
@@ -183,10 +181,10 @@ class Sorter:
 
     def sort(self):
         pillow_heif.register_heif_opener() # support heif
-
+        
         for img in self.queue:
             conform_fgs:list[FilterGroup] = []
-            
+
             for fg in self.filter_groups:
                 if fg.filter_all(img):
                     conform_fgs.append(fg)

@@ -1,9 +1,6 @@
-from pathlib import Path
-from configuration import Configuration
+from filter_types.filter_arg_types.location import Location, safe_geocode
 
-c = Configuration(Path("/home/felix/Documents/Programming/ViSort/test/default_config.toml"))
+loc = Location(input())
+loc2 = Location(input())
 
-
-s_names = [vars(s) for s in c.sorters]
-
-print (f"Sorters:\n {s_names}\n")
+print(loc.are_coords_in_same_smallest_region(loc2.get_coords()))

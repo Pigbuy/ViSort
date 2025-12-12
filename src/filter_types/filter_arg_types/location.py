@@ -1,56 +1,140 @@
+import time
+from typing import cast
+import requests
 from filter_types.filter_arg_types.filter_arg_type import FilterArgType
-from geopy.geocoders import Nominatim
-from geopy.exc import GeocoderTimedOut
 from geopy import distance
 from Errors import MEM
+from logger import logger
+
+LOCATIONIQ_KEY = "pk.6a15d723744b76cb18ce69b735cc7f96"
+BASE_FWD = "https://eu1.locationiq.com/v1/search"
+BASE_REV = "https://eu1.locationiq.com/v1/reverse"
 
 
-geolocator = Nominatim(user_agent="geo_check")
+def safe_geocode(q: str | tuple[float, float], retries: int = 5):
+    def is_LocationIQ_Error(r:(dict | list), i:int) -> bool:
+        if isinstance(r, list):
+            return False
+        match r.get("error"):
+            case None:
+                return False
+            case "Invalid Request":
+                raise Exception("For some reason the LocationIQ request is invalid. This program will probably have to be updated before it works again.")
+            case "Invalid Key":
+                raise Exception("Your LocationIQ Key is invalid")
+            case "Access restricted":
+                raise Exception("Access to LocationIQ is restricted for some reason")
+            case "Unable to geocode":
+                pass
+            case "Rate Limited Day":
+                raise Exception("You have been rate limited for the day by LocationIQ")
+            case "Rate Limited Minute":
+                logger.warning("waiting 30 seconds because LocationIQ rate limited you for this minute")
+                time.sleep(30)
+            case "Rate Limited Second":
+                logger.info("waiting half a second because LocationIQ rate limited you")
+                time.sleep(0.5)
+            case "Unknown error - Please try again after some time":
+                if i <= 3:
+                    logger.warning("LocationIQ ran into an unknown error sooo Im gonna try again in a second")
+                    time.sleep(1)
+                else:
+                    raise Exception("LocationIQ is having problems atm, you'll have to wait until its fixed")
+            case _:
+                raise Exception("an unknown error occured while geocoding a location")
+        return True
+    
+    for i in range(retries):
+        if isinstance(q, str):
+            r = requests.get(
+                BASE_FWD,
+                params={
+                    "key": LOCATIONIQ_KEY,
+                    "q": q,
+                    "accept-language": "en",
+                    "format": "json",
+                    "limit": 1,
+                    "addressdetails": 1,
+                    "normalizeaddress": 1,
+                    "normalizecity": 1,
+                },
+                timeout=5,
+            )
+            data = r.json()
+            if is_LocationIQ_Error(data, i):
+                continue
+            print(data[0])
+            return data[0] if isinstance(data, list) and data else None
+
+        else:  # reverse geocoding
+            lat, lon = q
+            r = requests.get(
+                BASE_REV,
+                params={
+                    "key": LOCATIONIQ_KEY,
+                    "lat": lat,
+                    "lon": lon,
+                    "accept-language": "en",
+                    "format": "json",
+                    "addressdetails": 1,
+                    "normalizeaddress": 1,
+                    "normalizecity": 1,
+                    "oceans": 1
+                },
+                timeout=5,
+            )
+            data = r.json()
+            if is_LocationIQ_Error(data, i):
+                continue
+            print(data)
+            return data if isinstance(data, dict) else None
+    return None
 
 class Location(FilterArgType):
     def __init__(self, string):
         if not isinstance(string, str):
-            MEM.queue_error("could not validate location filter configuration",
-                            f"location argument is not a list of strings.\nInstead the list contains: {type(string).__name__}")
-        valid = True
-        try:
-            loc = geolocator.geocode(string, addressdetails=True, exactly_one=True, language="en")  # type: ignore[arg-type]
-            if not loc:
-                MEM.queue_error("Couldn't validate location",
-                                "text in location field is garbage, wtf did you type in there? Try something else.")
-                valid = False
-                
-        except GeocoderTimedOut:
-            loc = None
-            MEM.queue_error("Couldn't validate location",
-                            "Geocoder timed out. Check your internet or check if osm/Nominatim are down")
-            valid = False
-        if valid and loc:
-            self.location = loc  # type: ignore[arg-type]
+            MEM.queue_error(
+                "could not validate location filter configuration",
+                f"location argument is not a string.\nInstead it's of type: {type(string).__name__}"
+            )
+
+        loc = safe_geocode(string)
+        if not loc:
+            MEM.queue_error(
+                "Couldn't validate location",
+                "LocationIQ returned no results, throttled you, or you don't have internet."
+            )
         else:
-            self.location = "Ohio" #idk lol needed a default value, hope it doesn't break anything
+            self.location:dict = loc
 
-    def are_coords_in_same_smallest_region(self, coords:tuple[float,float]) -> bool:
-        """returns True if the given coordinates are in the same smallest specified region.
-        For example if the location is \"Bergen, Norway\", and the coordinates are in Bergen it will return true.
-        This works for countries, states, regions, municipalities, cities, towns, villages, suburbs, neighbourhoods, hamlets and localities"""
-        addr = getattr(self.location, 'raw', {}).get('address', {})
-        coord_addr = getattr(geolocator.reverse(coords, addressdetails=True, exactly_one=True, language="en"), 'raw', {}).get('address', {})  # type: ignore[arg-type]
+    def are_coords_in_same_smallest_region(self, coords: tuple[float, float]) -> bool:
+        addr = self.location.get("address")
+        coord = safe_geocode(coords)
+        coord_addr = coord.get("address", {}) if coord else {}
+
+        keys = [
+            "country", "state", "county", "city", "island", "suburb", "neighbourhood", "road", "house_number"
+        ]
+
         one_common = False
-        for key in ['country', 'state', 'region', 'county', 'municipality', 'city', 'town', 'village', 'suburb', 'neighbourhood', 'hamlet', 'locality']:
-            val1: str = addr.get(key, "").lower()
-            val2: str = coord_addr.get(key, "").lower()
+        for key in keys:
+            v1 = cast(dict[str,str],addr).get(key, "").lower()
+            v2 = cast(dict[str,str],coord_addr).get(key, "").lower()
 
-            if key in addr and key in coord_addr:
+            if (v1 != "") and (v2 != ""):
                 one_common = True
-                if val1 != val2:
+                if v1 != v2:
                     return False
-            # if both locations have no key in common return False
             else:
-                if key == 'locality' and one_common == False:
+                if key == keys[-1] and not one_common:
                     return False
+
         return True
 
-    def get_dist_to_km(self, coords) -> float:
-        self_coords = (getattr(self.location, 'latitude', None), getattr(self.location, 'longitude', None))
-        return distance.distance(self_coords, coords).km
+    def get_coords(self) -> tuple[float, float]:
+        lat = float(cast(str,self.location.get("lat")))
+        lon = float(cast(str,self.location.get("lon")))
+        return (lat,lon)
+
+    def get_dist_to_km(self, coords: tuple[float, float]) -> float:
+        return distance.distance(self.get_coords(), coords).km

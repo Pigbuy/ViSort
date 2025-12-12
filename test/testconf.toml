@@ -1,4 +1,4 @@
-[Sorters.MySorter1]
+[Sorters.Country]
     priority = 0
     method = "link"
     input_folder = "/home/felix/Documents/Programming/ViSort/test/Input"
@@ -6,10 +6,39 @@
     resolve_equal_sort_method = "first"
     hierarchy = ["hi"]
 
-    [Sorters.MySorter1.FilterGroups.Germany]
-        [Sorters.MySorter1.FilterGroups.Germany.location]
+    [Sorters.Country.FilterGroups.Germany]
+        [Sorters.Country.FilterGroups.Germany.location]
         location = "Germany"
     
-    [Sorters.MySorter1.FilterGroups.Denmark]
-        [Sorters.MySorter1.FilterGroups.Denmark.location]
+    [Sorters.Country.FilterGroups.Denmark]
+        [Sorters.Country.FilterGroups.Denmark.location]
         location = "Denmark"
+
+    [Sorters.Country.FilterGroups.Norway]
+        [Sorters.Country.FilterGroups.Norway.location]
+        location = "Norway"
+
+[Sorters.NorwayPlace]
+    priority = 1
+    method = "move"
+    input_folder = "/home/felix/Documents/Programming/ViSort/test/Sorted/Norway"
+    output_folder = "/home/felix/Documents/Programming/ViSort/test/Sorted/Norway"
+    resolve_equal_sort_method = "first"
+    hierarchy = ["hi"]
+
+    [Sorters.NorwayPlace.FilterGroups.Bergen]
+        [Sorters.NorwayPlace.FilterGroups.Bergen.location]
+        location = "Bergen, Norway"
+
+[Sorters.DenmarkPlace]
+    priority = 1
+    method = "move"
+    input_folder = "/home/felix/Documents/Programming/ViSort/test/Sorted/Denmark"
+    output_folder = "/home/felix/Documents/Programming/ViSort/test/Sorted/Denmark"
+    resolve_equal_sort_method = "first"
+    hierarchy = ["hi"]
+
+    [Sorters.DenmarkPlace.FilterGroups.Hirtshals]
+        [Sorters.DenmarkPlace.FilterGroups.Hirtshals.location]
+        location = "Hirtshals, Denmark"
+        # description_caching = true

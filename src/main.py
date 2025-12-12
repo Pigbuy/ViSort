@@ -86,14 +86,14 @@ def main():
     for priority, sorters in tqdm(psl.items(),
                                   desc=f"sorter priorities",
                                   total=len(psl),
-                                  position=0, unit="priorities"):
+                                  position=0, unit="priority level"):
 
         for sorter in cast(list[Sorter],
                            tqdm(sorters,
                                 desc=f"sorters of priority {priority}",
                                 total=len(sorters),
                                 position=1,
-                                unit="sorters")):
+                                unit="sorter")):
             with MEM.branch(f"sorting using the {sorter.name} Sorter"):
                 sorter.verify_input_files()
                 sorter.sort()
