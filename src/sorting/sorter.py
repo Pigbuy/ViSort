@@ -1,10 +1,13 @@
 from pathlib import Path
-from queue import Queue
+from asyncio import Queue
+
+from tqdm import tqdm
 from logger import logger
 from Errors import MEM
 from filter_group import FilterGroup
 import shutil
 import os
+import asyncio
 from PIL import Image
 import pillow_heif
 import json
@@ -157,48 +160,70 @@ class Sorter:
                         logger.warning(f"'{self.name}' defines a hierarchy, even though 'resolve_equal_sort_method' is not 'group_hierarchy' or 'fiter_hierarchy'. Ignoring...")
 
 
-    def verify_input_files(self):
+    async def watch_input_folder(self, event_queue:Queue):
+        def verify_folder():
+            if not self.input_folder.exists():
+                self.input_folder.mkdir(exist_ok=True,parents=True)
+            if not self.input_folder.is_dir():
+                raise Exception(f"input folder specified in the {self.name} Sorter is not a folder")            
         pillow_heif.register_heif_opener() # support heif
-        with MEM.branch(f"validating the input folder defined in the {self.name} Sorter and its files"):
-            if self.input_folder.exists():
-                if not self.input_folder.is_dir():
-                    MEM.queue_error("could not validate Sorter configuration",
-                                    f"the specified input folder '{self.input_folder}' is not a folder")
-            else:
-                MEM.queue_error("could not validate Sorter configuration",
-                                f"the specified input folder '{self.input_folder}' does not exist")
+        verify_folder()
+        known = set()
+        while True:
+            verify_folder()
+            current = set(self.input_folder.iterdir())
+            new = current - known
+            total_imgs = 0
+            
+            if not len(new) == 0:
+                await event_queue.put(f"{self.name} Sorter found {len(new)} new files in its input folder")
 
-            files = [f for f in self.input_folder.iterdir() if f.is_file()]
-            for file in files:
-                try:
-                    with Image.open(file) as img:
-                        img.verify()
-                    self.queue.append(file)
-                except:
-                    MEM.queue_error("could not verify all files in input folder",
-                                    f"File '{file}' is not compatible")
-        MEM.throw_if_errors()
+                for file in new.copy():
+                    if not file.is_file():
+                        new.discard(file)
+                        continue
+                    try:
+                        with Image.open(file) as img:
+                            img.verify()
+                        self.queue.append(file)
+                    except:
+                        new.discard(file)
+                        continue
+            
+                total_imgs = len(new)
 
-    def sort(self):
+            if not total_imgs == 0:
+                await event_queue.put(f"{self.name} Sorter found {total_imgs} viable images in its input folder")
+
+                for img in tqdm(new,desc=f"{self.name} Sorter progress", unit="imgs"):
+                    await self.sort(img)
+
+                await event_queue.put(f"{self.name} Sorter sorted {total_imgs} images")
+
+            known = current
+            await asyncio.sleep(1)
+
+
+    async def sort(self, img):
         pillow_heif.register_heif_opener() # support heif
         
-        for img in self.queue:
-            conform_fgs:list[FilterGroup] = []
+        conform_fgs:list[FilterGroup] = []
 
-            for fg in self.filter_groups:
-                if fg.filter_all(img):
-                    conform_fgs.append(fg)
+        for fg in self.filter_groups:
+            filter_result = await fg.filter_all(img)
+            if filter_result:
+                conform_fgs.append(fg)
 
-            if len(conform_fgs) > 1:
-                conform_fgs = handle_conflict(handler_name = self.resolve_equal_sort_method,
-                                              conform_fgs  = conform_fgs,
-                                              hierarchy    = self.hierarchy)
-            if len(conform_fgs) == 0:
-                conform_fgs.append(FilterGroup(name="other", filters={}))
+        if len(conform_fgs) > 1:
+            conform_fgs = handle_conflict(handler_name = self.resolve_equal_sort_method,
+                                            conform_fgs  = conform_fgs,
+                                            hierarchy    = self.hierarchy)
+        if len(conform_fgs) == 0:
+            conform_fgs.append(FilterGroup(name="other", filters={}))
 
-            actually_sort(method_name        = self.method,
-                          filter_group_names = [cf.name for cf in conform_fgs],
-                          image_path         = img,
-                          output_folder      = self.output_folder)
+        actually_sort(method_name        = self.method,
+                        filter_group_names = [cf.name for cf in conform_fgs],
+                        image_path         = img,
+                        output_folder      = self.output_folder)
                 
                 

@@ -112,7 +112,7 @@ class DateTime(FilterType):
                 
 
             
-    def filter(self, image:Path) -> bool:
+    async def filter(self, image:Path) -> bool:
         pillow_heif.register_heif_opener() # support heif
         img = Image.open(image)
         exif = img.getexif()
@@ -121,7 +121,7 @@ class DateTime(FilterType):
             logger.warning(f"{image} does not have date and time metadata, skipping")
             return False
         else:
-            dt = datetime.strptime(raw, "%Y:%m:%d %H:%M:%S") # type: ignore[arg-type]
+            dt = datetime.strptime(raw, "%Y:%m:%d %H:%M:%S")
         
         if isinstance(self.start_dt, datetime) and isinstance(self.end_dt, datetime):
             if self.start_dt < dt < self.end_dt:
@@ -135,4 +135,3 @@ class DateTime(FilterType):
         else:
             logger.critical("what the fuck, this is not normal, you are a magician or something, lets just ignore this for now :')")
             return False
-            

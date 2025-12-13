@@ -1,11 +1,12 @@
 import argparse
+import asyncio
 import os
 from pathlib import Path
 
 from tqdm import tqdm
 from PIL import Image
 import threading
-from queue import Queue
+from asyncio import Queue
 from typing import List, cast
 import time
 
@@ -65,9 +66,8 @@ def sort_sorters_by_priority(config:Configuration) -> dict[int, list[Sorter]]:
     
     return dict(sorted(priority_sorter_list.items()))
 
-        
 
-def main():
+async def main():
     args = build_parser().parse_args()
     try:
         cp = Path(args.config_location)
@@ -81,28 +81,18 @@ def main():
 
     config:Configuration = Configuration(Path(args.config_location)) # parse the configuration file and throw errors if anything is wrong
 
-    psl:dict[int, list[Sorter]] = sort_sorters_by_priority(config=config)
+    #psl:dict[int, list[Sorter]] = sort_sorters_by_priority(config=config)
 
-    for priority, sorters in tqdm(psl.items(),
-                                  desc=f"sorter priorities",
-                                  total=len(psl),
-                                  position=0, unit="priority level"):
+    event_queue = Queue()
 
-        for sorter in cast(list[Sorter],
-                           tqdm(sorters,
-                                desc=f"sorters of priority {priority}",
-                                total=len(sorters),
-                                position=1,
-                                unit="sorter")):
-            with MEM.branch(f"sorting using the {sorter.name} Sorter"):
-                sorter.verify_input_files()
-                sorter.sort()
-
-
-
-
-
-
+    for sorter in config.sorters:
+        asyncio.create_task(sorter.watch_input_folder(event_queue=event_queue))
+        print(f"made {sorter.name} task")
+    
+    while True:
+        e = await event_queue.get()  # let tasks do their thing until a task sends an event
+        print(e)
+        
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

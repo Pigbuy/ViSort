@@ -1,6 +1,8 @@
 import time
 from typing import cast
 import requests
+import asyncio
+import aiohttp
 from filter_types.filter_arg_types.filter_arg_type import FilterArgType
 from geopy import distance
 from Errors import MEM
@@ -63,7 +65,6 @@ def safe_geocode(q: str | tuple[float, float], retries: int = 5):
             data = r.json()
             if is_LocationIQ_Error(data, i):
                 continue
-            print(data[0])
             return data[0] if isinstance(data, list) and data else None
 
         else:  # reverse geocoding
@@ -86,8 +87,93 @@ def safe_geocode(q: str | tuple[float, float], retries: int = 5):
             data = r.json()
             if is_LocationIQ_Error(data, i):
                 continue
-            print(data)
             return data if isinstance(data, dict) else None
+    return None
+
+async def safe_geocode_async(q: str | tuple[float, float], retries: int = 5):
+    async def is_LocationIQ_Error(r: dict | list, i: int) -> bool:
+        if isinstance(r, list):
+            return False
+
+        match r.get("error"):
+            case None:
+                return False
+            case "Invalid Request":
+                raise Exception("LocationIQ request is invalid")
+            case "Invalid Key":
+                raise Exception("Your LocationIQ key is invalid")
+            case "Access restricted":
+                raise Exception("Access to LocationIQ is restricted")
+            case "Unable to geocode":
+                pass
+            case "Rate Limited Day":
+                raise Exception("Rate limited for the day")
+            case "Rate Limited Minute":
+                logger.warning("Rate limited per minute, sleeping 30s")
+                await asyncio.sleep(30)
+            case "Rate Limited Second":
+                logger.info("Rate limited per second, sleeping 0.5s")
+                await asyncio.sleep(0.5)
+            case "Unknown error - Please try again after some time":
+                if i <= 3:
+                    logger.warning("Unknown error, retrying")
+                    await asyncio.sleep(1)
+                else:
+                    raise Exception("LocationIQ is currently unstable")
+            case _:
+                raise Exception("Unknown LocationIQ error")
+
+        return True
+
+    timeout = aiohttp.ClientTimeout(total=5)
+
+    async with aiohttp.ClientSession(timeout=timeout) as session:
+        for i in range(retries):
+            try:
+                if isinstance(q, str):
+                    async with session.get(
+                        BASE_FWD,
+                        params={
+                            "key": LOCATIONIQ_KEY,
+                            "q": q,
+                            "accept-language": "en",
+                            "format": "json",
+                            "limit": 1,
+                            "addressdetails": 1,
+                            "normalizeaddress": 1,
+                            "normalizecity": 1,
+                        },
+                    ) as r:
+                        data = await r.json()
+
+                else:
+                    lat, lon = q
+                    async with session.get(
+                        BASE_REV,
+                        params={
+                            "key": LOCATIONIQ_KEY,
+                            "lat": lat,
+                            "lon": lon,
+                            "accept-language": "en",
+                            "format": "json",
+                            "addressdetails": 1,
+                            "normalizeaddress": 1,
+                            "normalizecity": 1,
+                            "oceans": 1,
+                        },
+                    ) as r:
+                        data = await r.json()
+                        
+
+                if await is_LocationIQ_Error(data, i):
+                    continue
+
+                return data[0] if isinstance(data, list) else data
+
+            except:
+                await asyncio.sleep(1 + i)
+
+
     return None
 
 class Location(FilterArgType):
@@ -107,10 +193,10 @@ class Location(FilterArgType):
         else:
             self.location:dict = loc
 
-    def are_coords_in_same_smallest_region(self, coords: tuple[float, float]) -> bool:
+    async def are_coords_in_same_smallest_region(self, coords: tuple[float, float]) -> bool:
         addr = self.location.get("address")
-        coord = safe_geocode(coords)
-        coord_addr = coord.get("address", {}) if coord else {}
+        coord = await safe_geocode_async(coords)
+        coord_addr:dict = coord.get("address", {}) if coord else {}
 
         keys = [
             "country", "state", "county", "city", "island", "suburb", "neighbourhood", "road", "house_number"

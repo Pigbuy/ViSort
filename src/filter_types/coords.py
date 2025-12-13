@@ -62,7 +62,7 @@ class Coords(FilterType):
                 MEM.queue_error("couldn't validate coordinates filter configuration",
                                 f"radius argument isn't an integer, float or str(interval).\nInstead it's: {type(radius).__name__}")
 
-    def filter(self, image:Path) -> bool:
+    async def filter(self, image:Path) -> bool:
         pillow_heif.register_heif_opener() # support heif
         def extract_coords(image_path: Path) -> Optional[tuple[float, float]]:
             try:

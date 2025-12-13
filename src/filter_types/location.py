@@ -54,7 +54,7 @@ class Loc(FilterType):
                 MEM.queue_error("could not validate location filter configuration",
                                 f"radius argument is not an integer, float, string(interval) or nothing.\nInstead it's: {type(radius).__name__}")
     
-    def filter(self, image: Path) -> bool:
+    async def filter(self, image: Path) -> bool:
         pillow_heif.register_heif_opener() # support heif
         def extract_coords(image_path: Path) -> Optional[tuple[float, float]]:
             try:
@@ -87,14 +87,14 @@ class Loc(FilterType):
                                     lon = -abs(lon)
 
                                 return (lat,lon)
-                    except Exception:
+                    except:
                         pass
                     
                     logger.warning(f"no location metadata found in:{image_path}")
                     return None
 
-            except Exception as e:
-                logger.warning(f"could not read file {image_path}")
+            except:
+                logger.warning(f"could not read file '{image_path}' to get location metadata")
                 return None
         
         image_coords = extract_coords(image)
@@ -111,11 +111,13 @@ class Loc(FilterType):
                 return False
 
         if isinstance(self.location, Location):
-            if self.location.are_coords_in_same_smallest_region(image_coords) or in_radius(self.location):
+            r = await self.location.are_coords_in_same_smallest_region(image_coords)
+            if r or in_radius(self.location):
                 return True
             return False
         else:
             for l in self.location:
-                if l.are_coords_in_same_smallest_region(image_coords) or in_radius(l):
+                r = await l.are_coords_in_same_smallest_region(image_coords)
+                if r or in_radius(l):
                     return True
             return False

@@ -26,8 +26,9 @@ class FilterGroup():
                     MEM.queue_error("could not parse Filter",
                                     f"Filter Type \"{f_type}\" doesn't exist")
 
-    def filter_all(self, image:Path) -> bool:
+    async def filter_all(self, image:Path) -> bool:
         for f in self.filters:
-            if not f.filter(image):
+            filter_result = await f.filter(image)
+            if not filter_result:
                 return False
         return True
