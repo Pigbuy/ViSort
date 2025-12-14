@@ -1,3 +1,4 @@
+from io import BytesIO
 import json
 from pathlib import Path
 from typing import Optional
@@ -10,16 +11,18 @@ from logger import logger
 import os
 import asyncio
 import base64
-from PIL import Image, ExifTags
+from PIL import Image, ExifTags, ImageFile
 import pillow_heif
 from ollama import AsyncClient
 from openai import AsyncOpenAI
 from typing import cast
 from openai.types.responses import ResponseInputParam
+import logging
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 OPENAI_KEY = "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"#os.environ.get("OPENAI_API_KEY")
 
-register_ft("description")
+@register_ft("description")
 class Description(FilterType):
     def __init__(self, args:dict) -> None:
         logger.debug("validating description filter configuration")
@@ -80,7 +83,7 @@ class Description(FilterType):
                     MEM.queue_error("could not parse description filter configuration",
                                     f"the prompt field does not contain a string but an object of type '{type(prompt).__name__}'")
             else:
-                prompt = "write a detailed description of the attached image. Refrain from using Markdown."
+                self.prompt = "Write a very detailed but short description of the attached image. Analyze which object in the image takes the most space in the image, where it is and how important it is and why. Analyze the colours and the vibe of the image. Also analyze the intent behind the image and what the person who took the image was thinking, in what kind of situation they were and why they took the image. Refrain from using Markdown or emojis."
             
             write_cache = args.get("write_cache")
             if write_cache:
@@ -106,9 +109,25 @@ class Description(FilterType):
 
 
     async def filter(self, image) -> bool:
-        async def prompt_llm(prompt:str, model:str, img:Optional[Path] = None):
+        pillow_heif.register_heif_opener()
+        async def prompt_llm(prompt:str, model:str, img:Optional[Path] = None) -> str | None:
+
+            def get_Image_jpeg_b64(i:Path) -> str:
+                data = i.read_bytes()
+                with Image.open(BytesIO(data)) as img:
+                    if img.format == "JPEG":
+                        return base64.b64encode(data).decode()
+
+                    if img.mode not in ("RGB", "L"):
+                        img = img.convert("RGB")
+
+                    out = BytesIO()
+                    img.save(out, format="JPEG")
+                    return base64.b64encode(out.getvalue()).decode()
+
             async def prompt_ollama(p:str, m:str, i:Optional[Path]):
-                message = { "role": "user", "content": p, **( { 'images': [str(i)] } if i else {} ) }
+                b64 = get_Image_jpeg_b64(i) if i else None
+                message = { "role": "user", "content": p, **( { 'images': [b64] } if i else {} ) }
                 response = await AsyncClient().chat(model=m, messages=[message])
                 return response.message.content or ""
             async def prompt_openai(p:str, m:str, i:Optional[Path]):
@@ -116,39 +135,80 @@ class Description(FilterType):
 
                 content = [ {"type": "input_text", "text": p} ]
                 if i:
-                    b64 = base64.b64encode(i.read_bytes()).decode("utf-8")
+                    b64 = get_Image_jpeg_b64(i)
                     content.append( {"type": "input_image", "image_url": f"data:image/jpeg;base64,{b64}"} )
 
                 r = await openai_client.responses.create( model=m, input=cast( ResponseInputParam, [ {"role": "user", "content": content} ] ) )
 
                 return r.output_text
             
-            if self.provider == "ollama":
-                return await prompt_ollama(prompt, model, img)
-            elif self.provider == "openai":
-                return await prompt_openai(prompt, model, img)
+            done = False
+            while not done:
+                try:
+                    if self.provider == "ollama":
+                        done = True
+                        return await prompt_ollama(prompt, model, img)
+                    elif self.provider == "openai":
+                        done = True
+                        return await prompt_openai(prompt, model, img)
+                except:
+                    continue
         
-        
-        pillow_heif.register_heif_opener()
-        img = Image.open(image)
-        exif = img.getexif()
-        description = exif.get(0x010E)
-        j = None
+        def get_desc_from_json_desc_metadata(pil_exif:Image.Exif) -> str | int:
+            desc = pil_exif.get(0x010E)
+            if desc:
+                try:
+                    desc = json.loads(desc)
+                except:
+                    return 2#"No json in description"
+            else:
+                return 1#"No description metadata"
 
-        #try getting cached description
-        if description and self.use_cache:
-            try:
-                j = json.loads(description)
-            except:
-                pass
-        jd = None
-        if isinstance(j, dict):
-            jd = j.get("description")
+            #json is in the description exif metadata
+            if isinstance(desc, dict):
+                desc = desc.get("description")
+                if desc:
+                    return desc
+                else:
+                    return 0#"no description in json"
+            #means the json isn't a dict
+            return 3
+            
+        def write_desc_cache(llm:str, desc:str, image_path:Path):
+            pil_img = Image.open(image_path)
+            exif = pil_img.getexif()
+            match get_desc_from_json_desc_metadata(exif):
+                case 0:
+                    exif_description_json = json.loads( cast ( str, exif.get(0x010E) ) )
+                    exif_description_json["description"] = desc
+                    exif_description_json["desc_author_llm"] = llm
+                    exif[0x010E] = json.dumps(exif_description_json).encode()
+                    pil_img.save(image_path,exif=exif)
+                case 1:
+                    exif_description_json = {"desc_author_llm": llm, "description": desc}
+                    exif[0x010E] = json.dumps(exif_description_json).encode()
+                    pil_img.save(image_path,exif=exif)
+                case 2:
+                    exif_description_json = {"desc_author_llm": llm, "description": desc, "old": exif.get(0x010E)}
+                    exif[0x010E] = json.dumps(exif_description_json).encode()
+                    pil_img.save(image_path,exif=exif)
+                case 3:
+                    exif_description_json = {"desc_author_llm": llm, "description": desc}
+                    exif[0x010E] = json.dumps(exif_description_json).encode()
+                    pil_img.save(image_path,exif=exif)
+                case _:
+                    pass
+
+
+        pil_img = Image.open(image)
+        exif = pil_img.getexif()
+        description = exif.get(0x010E)
+        img_desc = ""
 
         # if there is an image model but no text model specified, ask image model directly for feedback on descr
         if self.vision_model != "" and self.text_model == "":
             res = await prompt_llm(f"Does the attached image fit the following image description? Answer with either 'True' or 'False' AND NOTHING ELSE!: {self.descr}",
-                                    self.text_model,
+                                    self.vision_model,
                                     img=image)
             done = False
             while not done:
@@ -161,33 +221,33 @@ class Description(FilterType):
                 else:
                     logger.critical("MODEL DOES NOT WANT TO COOPERATE!!! ITS NOT SAYING TRUE OR FALSE, ELEVATING AGGRESSION")
                     res = await prompt_llm(f"LISTEN TO ME!!! Does the attached image fit the following image description? Answer with either 'True' or 'False' AND NOTHING ELSE! JUST TO BE CLEAR: ANSWER ONLY WITH 'True' OR 'False', no explanation or ANYTHING ELSE!!! DO YOU UNDERSTAND?!?!?!? So now, does the attached image fit the following image description?(answer either with 'True' or 'False'): {self.descr}",
-                                    self.text_model,
+                                    self.vision_model,
                                     img=image)
             return False # just in case something goes very wrong
-
-        # if there is not vision model but a text model, hope for cache and if there is no cache fail filter
+        
+        # if there is only a text model available go off of cache alone
         elif self.vision_model == "" and self.text_model != "":
-            if jd and self.use_cache:
-                img_desc = jd
+            if self.use_cache:
+                img_desc = get_desc_from_json_desc_metadata(exif)
             else:
-                logger.warning(f"could not run '{image}' through the description filter normally because it doesn't have a description cached and the configuration says only to use cached descriptions")
-                return False
-        
-        # if there is both a text and vision model make the vision model describe the image except if cache is enabled and present, then use the cache and if write cache is enabled write the description
-        elif self.vision_model != "" and self.text_model != "":
-            if jd and self.use_cache:
-                img_desc = jd
-            else:
-                img_desc = await prompt_llm(self.prompt, self.vision_model, img = image)
-                if self.write_cache:
-                    jayson = {"desc_author_llm": self.vision_model, "desc": img_desc}
-                    exif[0x010E] = json.dumps(jayson).encode()
-                    img.save(image,exif=exif)
+                return False# cant do anything else because the config says not not to use cache which is stupid I should check for this case while parsing the config  ##TODO##
+            if not isinstance(img_desc, str):
+                return False # cant do anything else because the config says not to use a vision model
 
-        else:
-            img_desc = "an image of a thing that doesn't exist" # because this cannot happen because I filtered this case while parsing the config
+        # if theres both text and vision models
+        elif self.vision_model != "" and self.text_model != "":
+            if self.use_cache:
+                img_desc = get_desc_from_json_desc_metadata(exif)
+            else:
+                img_desc = None
+            if not isinstance(img_desc, str):
+                img_desc = await prompt_llm(self.prompt, self.vision_model, img = image)
+                if not img_desc:
+                    return False # So pylance shuts up about that img_desc could also still be None
+                if self.write_cache:
+                    write_desc_cache(self.vision_model, img_desc, image)
         
-        # if not returned beforehand, let the text model filter the image with the descriptions
+        # do the thing with the intermediary text model
         res = await prompt_llm(f"Does image description A fit image description B? Answer with either 'True' or 'False' AND NOTHING ELSE! Image description A: '{self.descr}' ; Image description B: '{img_desc}'",
                                 self.text_model)
         done = False
@@ -202,4 +262,4 @@ class Description(FilterType):
                 logger.critical("MODEL DOES NOT WANT TO COOPERATE!!! ITS NOT SAYING TRUE OR FALSE, ELEVATING AGGRESSION")
                 res = await prompt_llm(f"LISTEN TO ME!!! Does image description A fit image description B? Answer with either 'True' or 'False' AND NOTHING ELSE! JUST TO BE CLEAR: ANSWER ONLY WITH 'True' OR 'False', no explanation or ANYTHING ELSE!!! DO YOU UNDERSTAND?!?!?!? So now, does image description A fit image description B?(answer either with 'True' or 'False'): Image description A: '{self.descr}' ; Image description B: '{img_desc}'",
                                 self.text_model)
-        return False # just in case something goes very wrong
+        return False

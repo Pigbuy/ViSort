@@ -80,6 +80,7 @@ async def main():
     MEM.throw_if_errors()
 
     config:Configuration = Configuration(Path(args.config_location)) # parse the configuration file and throw errors if anything is wrong
+    logger.info("parsed config file")
 
     #psl:dict[int, list[Sorter]] = sort_sorters_by_priority(config=config)
 
@@ -87,7 +88,7 @@ async def main():
 
     for sorter in config.sorters:
         asyncio.create_task(sorter.watch_input_folder(event_queue=event_queue))
-        print(f"made {sorter.name} task")
+    logger.info("started sorting")
     
     while True:
         e = await event_queue.get()  # let tasks do their thing until a task sends an event

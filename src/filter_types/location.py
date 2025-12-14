@@ -1,4 +1,5 @@
 # arg type imports
+import json
 from filter_types.filter_arg_types.location import Location
 from filter_types.filter_arg_types.interval import Interval
 
@@ -12,7 +13,7 @@ from logger import logger
 
 # builtin imports
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, Union, cast
 
 # library imports
 from PIL import Image
@@ -53,6 +54,17 @@ class Loc(FilterType):
             else:
                 MEM.queue_error("could not validate location filter configuration",
                                 f"radius argument is not an integer, float, string(interval) or nothing.\nInstead it's: {type(radius).__name__}")
+                
+
+            caching = args.get("caching")
+            if caching:
+                if isinstance(caching, bool):
+                    self.caching = caching
+                else:
+                    MEM.queue_error("could not validate location filter configuration",
+                                    f"caching argument is not an a boolean or empty.\nInstead it's: {type(caching).__name__}")
+            else:
+                self.caching = True
     
     async def filter(self, image: Path) -> bool:
         pillow_heif.register_heif_opener() # support heif
@@ -109,15 +121,97 @@ class Loc(FilterType):
                 return self.radius.contains(loc.get_dist_to_km(image_coords))
             else:
                 return False
+        
 
-        if isinstance(self.location, Location):
-            r = await self.location.are_coords_in_same_smallest_region(image_coords)
-            if r or in_radius(self.location):
-                return True
-            return False
+        if self.caching:
+            img = Image.open(image)
+            exif = img.getexif()
+            description = exif.get(0x010E)
+
+            if description:
+                try:
+                    j = json.loads(description)
+                except:
+                    j = None
+                
+                if j:
+                    if j.get("description"):
+                        # if location is fully cached
+                        logger.info(f"using cached location for {image}")
+                        loc = j
+                        if isinstance(self.location, Location):
+                            r = self.location.is_loc_in_same_smallest_region(loc=loc)
+                            if r or in_radius(self.location):
+                                return True
+                            return False
+                        else:
+                            for l in self.location:
+                                r = l.is_loc_in_same_smallest_region(loc=loc)
+                                if r or in_radius(l):
+                                    return True
+                            return False
+                    # if description json was found but no location entry
+                    else:
+                        logger.info(f"making new location cache entry for {image}")
+                        if isinstance(self.location, Location):
+                            loc = await Location.get_loc_from_coords(image_coords)
+                            jayson = j
+                            jayson["location"] = loc
+                            exif[0x010E] = json.dumps(jayson).encode()
+                            img.save(image,exif=exif)
+                            r = self.location.is_loc_in_same_smallest_region(loc= cast(dict, loc))
+                            if r or in_radius(self.location):
+                                return True
+                            return False
+                        else:
+                            for l in self.location:
+                                loc = await Location.get_loc_from_coords(image_coords)
+                                jayson = j
+                                jayson["location"] = loc
+                                exif[0x010E] = json.dumps(jayson).encode()
+                                img.save(image,exif=exif)
+                                r = l.is_loc_in_same_smallest_region(loc= cast(dict, loc))
+                                if r or in_radius(l):
+                                    return True
+                            return False
+
+
+            # if no description or cached location was found
+            else:
+                logger.info(f"making new cache json with location entry for {image}")
+                if isinstance(self.location, Location):
+                    loc = await Location.get_loc_from_coords(image_coords)
+                    jayson = {"location": loc}
+                    exif[0x010E] = json.dumps(jayson).encode()
+                    img.save(image,exif=exif)
+                    r = self.location.is_loc_in_same_smallest_region(loc= cast(dict, loc))
+                    if r or in_radius(self.location):
+                        return True
+                    return False
+                else:
+                    for l in self.location:
+                        loc = await Location.get_loc_from_coords(image_coords)
+                        jayson = {"location": loc}
+                        exif[0x010E] = json.dumps(jayson).encode()
+                        img.save(image,exif=exif)
+                        r = l.is_loc_in_same_smallest_region(loc= cast(dict, loc))
+                        if r or in_radius(l):
+                            return True
+                    return False
+        
+
+        # if caching is disabled
         else:
-            for l in self.location:
-                r = await l.are_coords_in_same_smallest_region(image_coords)
-                if r or in_radius(l):
+            if isinstance(self.location, Location):
+                r = await self.location.are_coords_in_same_smallest_region(image_coords)
+                if r or in_radius(self.location):
                     return True
-            return False
+                return False
+            else:
+                for l in self.location:
+                    r = await l.are_coords_in_same_smallest_region(image_coords)
+                    if r or in_radius(l):
+                        return True
+                return False
+        
+        return False #pylance likes this even tho its unreachable

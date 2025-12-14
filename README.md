@@ -187,7 +187,7 @@ https://time.lol/
 - location              [✅]
 - coords                [✅]
 - datetime              [✅]
-- desc                  [❌]
+- desc                  [✅]
 - desc_word             [❌]
 - people                [❌]
 - people_count          [❌]

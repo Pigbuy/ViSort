@@ -91,7 +91,7 @@ class Sorter:
                 MEM.queue_error("could not parse Sorter configuration",
                                 f"Sorter resolve_equal_sort_method '{resolve_method}' is not valid.\nValid methods are: {', '.join(HANDLERS)}")
             else:
-                self.resolve_equal_sort_method: str = resolve_method            
+                self.resolve_equal_sort_method: str = resolve_method
 
             with MEM.branch("validating Filter Groups"):
                 self.filter_groups:list[FilterGroup] = []
@@ -114,9 +114,10 @@ class Sorter:
             # validate and parse hierarchy (optional, but required if resolve_equal_sort_method is hierarchy-based)
             hierarchy = config.get("hierarchy")
             if hierarchy is None:
-                if resolve_method and resolve_method != "auto":
+                if self.resolve_equal_sort_method == "fiter_hierarchy" or self.resolve_equal_sort_method == "group_hierarchy":
                     MEM.queue_error("could not parse Sorter configuration",
                                     f"Sorter hierarchy is required when resolve_equal_sort_method is '{resolve_method}'")
+                self.hierarchy = []
             elif not isinstance(hierarchy, list):
                 MEM.queue_error("could not parse Sorter configuration",
                                 f"Sorter hierarchy must be a list, not {type(hierarchy).__name__}")
@@ -157,6 +158,7 @@ class Sorter:
                                 MEM.queue_error("could not validate Group hierarchy",
                                                 f"the hierarchy is not a list of strings but has an object of type \"{type(g).__name__}\" at index {i}")
                     else:
+                        self.hierarchy = []
                         logger.warning(f"'{self.name}' defines a hierarchy, even though 'resolve_equal_sort_method' is not 'group_hierarchy' or 'fiter_hierarchy'. Ignoring...")
 
 
@@ -195,16 +197,16 @@ class Sorter:
             if not total_imgs == 0:
                 await event_queue.put(f"{self.name} Sorter found {total_imgs} viable images in its input folder")
 
-                for img in tqdm(new,desc=f"{self.name} Sorter progress", unit="imgs"):
-                    await self.sort(img)
-
-                await event_queue.put(f"{self.name} Sorter sorted {total_imgs} images")
+                #for img in tqdm(new,desc=f"{self.name} Sorter progress", unit="imgs"):
+                    #await self.sort(img)
+                for img in new:
+                    asyncio.create_task(self.sort(img, event_queue))
 
             known = current
             await asyncio.sleep(1)
 
 
-    async def sort(self, img):
+    async def sort(self, img, event_queue:Queue):
         pillow_heif.register_heif_opener() # support heif
         
         conform_fgs:list[FilterGroup] = []

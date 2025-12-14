@@ -217,6 +217,36 @@ class Location(FilterArgType):
                     return False
 
         return True
+    
+    @staticmethod
+    async def get_loc_from_coords(coords:tuple[float, float]):
+        return safe_geocode(coords)
+
+
+    def is_loc_in_same_smallest_region(self, loc:dict) -> bool:
+        addr = self.location.get("address")
+        coord = loc
+        coord_addr:dict = coord.get("address", {}) if coord else {}
+
+        keys = [
+            "country", "state", "county", "city", "island", "suburb", "neighbourhood", "road", "house_number"
+        ]
+
+        one_common = False
+        for key in keys:
+            v1 = cast(dict[str,str],addr).get(key, "").lower()
+            v2 = cast(dict[str,str],coord_addr).get(key, "").lower()
+
+            if (v1 != "") and (v2 != ""):
+                one_common = True
+                if v1 != v2:
+                    return False
+            else:
+                if key == keys[-1] and not one_common:
+                    return False
+
+        return True
+
 
     def get_coords(self) -> tuple[float, float]:
         lat = float(cast(str,self.location.get("lat")))
