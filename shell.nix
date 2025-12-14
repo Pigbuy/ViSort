@@ -10,6 +10,7 @@ mkShell {
     python312Packages.tqdm
     python312Packages.deepface
     python312Packages.ollama
+    python312Packages.openai
     python312Packages.aiohttp
     
     #gcc

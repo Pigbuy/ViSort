@@ -16,13 +16,13 @@ def get(name: str) -> Type[FilterType]:
     from . import location
     from . import date_time
     from . import coords
+    from . import descripion
     #from . import people
     #from . import people_count
     #from . import known_people_count
     #from . import gender_count
     #from . import gender_fraction
     #from . import average_age
-    #from . import descripion
     return FILTER_TYPES[name]
 
 def exists(name:str) -> bool:
@@ -30,24 +30,24 @@ def exists(name:str) -> bool:
     from . import location
     from . import date_time
     from . import coords
+    from . import descripion
     #from . import people
     #from . import people_count
     #from . import known_people_count
     #from . import gender_count
     #from . import gender_fraction
     #from . import average_age
-    #from . import descripion
     return name in FILTER_TYPES.keys()
 
 def get_registry_copy() -> dict[str, type[FilterType]]:
     from . import location
     from . import date_time
     from . import coords
+    from . import descripion
     #from . import people
     #from . import people_count
     #from . import known_people_count
     #from . import gender_count
     #from . import gender_fraction
     #from . import average_age
-    #from . import descripion
     return FILTER_TYPES.copy()

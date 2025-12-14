@@ -1,4 +1,5 @@
 import time
+import os
 from typing import cast
 import requests
 import asyncio
@@ -8,7 +9,7 @@ from geopy import distance
 from Errors import MEM
 from logger import logger
 
-LOCATIONIQ_KEY = "pk.6a15d723744b76cb18ce69b735cc7f96"
+LOCATIONIQ_KEY = os.environ.get("LOCATIONIQ_KEY")
 BASE_FWD = "https://eu1.locationiq.com/v1/search"
 BASE_REV = "https://eu1.locationiq.com/v1/reverse"
 
