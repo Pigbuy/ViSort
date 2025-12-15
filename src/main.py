@@ -18,18 +18,6 @@ import pillow_heif
 from sorting.sorter import Sorter
 pillow_heif.register_heif_opener()
 
-def sort_sorters_by_priority(config:Configuration) -> dict[int, list[Sorter]]:
-    priority_sorter_list:dict[int,list[Sorter]] = {}
-    def add(key: int, value):
-        if key not in priority_sorter_list:
-            priority_sorter_list[key] = []
-        priority_sorter_list[key].append(value)
-
-    for s in config.sorters:
-        add(s.priority,s)
-    
-    return dict(sorted(priority_sorter_list.items()))
-
 event_queue:Queue[dict] = Queue()
 
 async def main():
@@ -46,8 +34,6 @@ async def main():
 
     config:Configuration = Configuration(Path(args.config_location)) # parse the configuration file and throw errors if anything is wrong
     logger.info("parsed config file")
-
-    #psl:dict[int, list[Sorter]] = sort_sorters_by_priority(config=config)
 
     for sorter in config.sorters:
         asyncio.create_task(sorter.watch_input_folder(event_queue=event_queue))
