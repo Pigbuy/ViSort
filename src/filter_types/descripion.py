@@ -7,6 +7,7 @@ from filter_types.filter_types import register_ft
 
 from Errors import MEM
 from logger import logger
+from main import event_queue
 
 import os
 import asyncio
@@ -83,8 +84,8 @@ class Description(FilterType):
                     MEM.queue_error("could not parse description filter configuration",
                                     f"the prompt field does not contain a string but an object of type '{type(prompt).__name__}'")
             else:
-                self.prompt = "Write a very detailed but short description of the attached image. Analyze which object in the image takes the most space in the image, where it is and how important it is and why. Analyze the colours and the vibe of the image. Also analyze the intent behind the image and what the person who took the image was thinking, in what kind of situation they were and why they took the image. Refrain from using Markdown or emojis."
-            
+                self.prompt = "Write a detailed but very dense and short description of the attached image. Analyze which object in the image takes the most space in the image, where it is and how important it is and why. Also analyze the intent behind the image and what the person who took the image was thinking, in what kind of situation they were and why they took the image. Refrain from using Markdown or emojis and remember to keep it simple, dense, straightforward and short"
+
             write_cache = args.get("write_cache")
             if write_cache:
                 if isinstance(write_cache, bool):
@@ -108,9 +109,9 @@ class Description(FilterType):
                 self.use_cache = True
 
 
-    async def filter(self, image) -> bool:
+    async def filter(self, image, sn:str) -> bool:
         pillow_heif.register_heif_opener()
-        async def prompt_llm(prompt:str, model:str, img:Optional[Path] = None) -> str | None:
+        async def prompt_llm(prompt:str, model:str, img:Optional[Path] = None) -> str:
 
             def get_Image_jpeg_b64(i:Path) -> str:
                 data = i.read_bytes()
@@ -125,12 +126,15 @@ class Description(FilterType):
                     img.save(out, format="JPEG")
                     return base64.b64encode(out.getvalue()).decode()
 
-            async def prompt_ollama(p:str, m:str, i:Optional[Path]):
+            async def prompt_ollama(p:str, m:str, i:Optional[Path]) -> str:
                 b64 = get_Image_jpeg_b64(i) if i else None
                 message = { "role": "user", "content": p, **( { 'images': [b64] } if i else {} ) }
                 response = await AsyncClient().chat(model=m, messages=[message])
-                return response.message.content or ""
-            async def prompt_openai(p:str, m:str, i:Optional[Path]):
+                result = response.message.content or ""
+                if not result:
+                    raise ValueError("Ollama returned empty response")
+                return result
+            async def prompt_openai(p:str, m:str, i:Optional[Path]) -> str:
                 openai_client = AsyncOpenAI(api_key=OPENAI_KEY)
 
                 content = [ {"type": "input_text", "text": p} ]
@@ -140,19 +144,29 @@ class Description(FilterType):
 
                 r = await openai_client.responses.create( model=m, input=cast( ResponseInputParam, [ {"role": "user", "content": content} ] ) )
 
-                return r.output_text
+                result = r.output_text or ""
+                if not result:
+                    raise ValueError("OpenAI returned empty response")
+                return result
             
-            done = False
-            while not done:
+            max_retries = 5
+            retry_count = 0
+            while retry_count < max_retries:
                 try:
                     if self.provider == "ollama":
-                        done = True
                         return await prompt_ollama(prompt, model, img)
                     elif self.provider == "openai":
-                        done = True
                         return await prompt_openai(prompt, model, img)
+                    else:
+                        raise ValueError(f"Unknown provider: {self.provider}")
                 except:
+                    retry_count += 1
+                    if retry_count < max_retries:
+                        logger.warning(f"LLM call failed (attempt {retry_count}/{max_retries}), Retrying...")
+                        await asyncio.sleep(1)  # Wait 1 second before retrying
                     continue
+            
+            raise RuntimeError(f"LLM prompt failed after {max_retries} attempts")
         
         def get_desc_from_json_desc_metadata(pil_exif:Image.Exif) -> str | int:
             desc = pil_exif.get(0x010E)
@@ -211,16 +225,23 @@ class Description(FilterType):
                                     self.vision_model,
                                     img=image)
             done = False
-            while not done:
-                if res == "True":
+            max_retries = 3
+            retry_count = 0
+            while not done and retry_count < max_retries:
+                if res is None:
+                    res = ""
+                res_lower = res.strip().lower()
+                if res_lower == "true":
                     done = True
                     return True
-                if res == "False":
+                elif res_lower == "false":
                     done = True
                     return False
                 else:
-                    logger.critical("MODEL DOES NOT WANT TO COOPERATE!!! ITS NOT SAYING TRUE OR FALSE, ELEVATING AGGRESSION")
-                    res = await prompt_llm(f"LISTEN TO ME!!! Does the attached image fit the following image description? Answer with either 'True' or 'False' AND NOTHING ELSE! JUST TO BE CLEAR: ANSWER ONLY WITH 'True' OR 'False', no explanation or ANYTHING ELSE!!! DO YOU UNDERSTAND?!?!?!? So now, does the attached image fit the following image description?(answer either with 'True' or 'False'): {self.descr}",
+                    retry_count += 1
+                    if retry_count < max_retries:
+                        logger.critical("MODEL DOES NOT WANT TO COOPERATE!!! ITS NOT SAYING TRUE OR FALSE, ELEVATING AGGRESSION")
+                        res = await prompt_llm(f"LISTEN TO ME!!! Does the attached image fit the following image description? Answer with either 'True' or 'False' AND NOTHING ELSE! JUST TO BE CLEAR: ANSWER ONLY WITH 'True' OR 'False', no explanation or ANYTHING ELSE!!! DO YOU UNDERSTAND?!?!?!? So now, does the attached image fit the following image description?(answer either with 'True' or 'False'): {self.descr}",
                                     self.vision_model,
                                     img=image)
             return False # just in case something goes very wrong
@@ -251,15 +272,22 @@ class Description(FilterType):
         res = await prompt_llm(f"Does image description A fit image description B? Answer with either 'True' or 'False' AND NOTHING ELSE! Image description A: '{self.descr}' ; Image description B: '{img_desc}'",
                                 self.text_model)
         done = False
-        while not done:
-            if res == "True":
+        max_retries = 3
+        retry_count = 0
+        while not done and retry_count < max_retries:
+            if res is None:
+                res = ""
+            res_lower = res.strip().lower()
+            if res_lower == "true":
                 done = True
                 return True
-            if res == "False":
+            elif res_lower == "false":
                 done = True
                 return False
             else:
-                logger.critical("MODEL DOES NOT WANT TO COOPERATE!!! ITS NOT SAYING TRUE OR FALSE, ELEVATING AGGRESSION")
-                res = await prompt_llm(f"LISTEN TO ME!!! Does image description A fit image description B? Answer with either 'True' or 'False' AND NOTHING ELSE! JUST TO BE CLEAR: ANSWER ONLY WITH 'True' OR 'False', no explanation or ANYTHING ELSE!!! DO YOU UNDERSTAND?!?!?!? So now, does image description A fit image description B?(answer either with 'True' or 'False'): Image description A: '{self.descr}' ; Image description B: '{img_desc}'",
-                                self.text_model)
+                retry_count += 1
+                if retry_count < max_retries:
+                    logger.critical("MODEL DOES NOT WANT TO COOPERATE!!! ITS NOT SAYING TRUE OR FALSE, ELEVATING AGGRESSION")
+                    res = await prompt_llm(f"LISTEN TO ME!!! Does image description A fit image description B? Answer with either 'True' or 'False' AND NOTHING ELSE! JUST TO BE CLEAR: ANSWER ONLY WITH 'True' OR 'False', no explanation or ANYTHING ELSE!!! DO YOU UNDERSTAND?!?!?!? So now, does image description A fit image description B?(answer either with 'True' or 'False'): Image description A: '{self.descr}' ; Image description B: '{img_desc}'",
+                                    self.text_model)
         return False

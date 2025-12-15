@@ -5,6 +5,6 @@ class FilterType():
         self.TYPE:str = "base_class"
         pass
     
-    async def filter(self, image:Path) -> bool:
+    async def filter(self, image:Path, sn:str) -> bool:
         """checks if the image complies with the filter"""
         return True

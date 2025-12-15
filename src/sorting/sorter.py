@@ -178,8 +178,6 @@ class Sorter:
             total_imgs = 0
             
             if not len(new) == 0:
-                await event_queue.put(f"{self.name} Sorter found {len(new)} new files in its input folder")
-
                 for file in new.copy():
                     if not file.is_file():
                         new.discard(file)
@@ -195,8 +193,7 @@ class Sorter:
                 total_imgs = len(new)
 
             if not total_imgs == 0:
-                await event_queue.put(f"{self.name} Sorter found {total_imgs} viable images in its input folder")
-
+                await event_queue.put({"type": "found new images to sort", "sorter": self.name, "amount": total_imgs})
                 #for img in tqdm(new,desc=f"{self.name} Sorter progress", unit="imgs"):
                     #await self.sort(img)
                 for img in new:
@@ -212,7 +209,7 @@ class Sorter:
         conform_fgs:list[FilterGroup] = []
 
         for fg in self.filter_groups:
-            filter_result = await fg.filter_all(img)
+            filter_result = await fg.filter_all(img,sname=self.name)
             if filter_result:
                 conform_fgs.append(fg)
 
@@ -227,5 +224,4 @@ class Sorter:
                         filter_group_names = [cf.name for cf in conform_fgs],
                         image_path         = img,
                         output_folder      = self.output_folder)
-                
-                
+        await event_queue.put({"type": "finished sorting image", "sorter": self.name,"image": img})

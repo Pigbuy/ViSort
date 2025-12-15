@@ -66,7 +66,7 @@ class Loc(FilterType):
             else:
                 self.caching = True
     
-    async def filter(self, image: Path) -> bool:
+    async def filter(self, image: Path, sn:str) -> bool:
         pillow_heif.register_heif_opener() # support heif
         def extract_coords(image_path: Path) -> Optional[tuple[float, float]]:
             try:

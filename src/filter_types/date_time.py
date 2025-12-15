@@ -112,7 +112,7 @@ class DateTime(FilterType):
                 
 
             
-    async def filter(self, image:Path) -> bool:
+    async def filter(self, image:Path, sn:str) -> bool:
         pillow_heif.register_heif_opener() # support heif
         img = Image.open(image)
         exif = img.getexif()

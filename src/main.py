@@ -66,6 +66,7 @@ def sort_sorters_by_priority(config:Configuration) -> dict[int, list[Sorter]]:
     
     return dict(sorted(priority_sorter_list.items()))
 
+event_queue:Queue[dict] = Queue()
 
 async def main():
     args = build_parser().parse_args()
@@ -84,16 +85,49 @@ async def main():
 
     #psl:dict[int, list[Sorter]] = sort_sorters_by_priority(config=config)
 
-    event_queue = Queue()
-
     for sorter in config.sorters:
         asyncio.create_task(sorter.watch_input_folder(event_queue=event_queue))
     logger.info("started sorting")
-    
+
+    bars:dict[str,tqdm] = {}
+    status_bars:dict[str,tqdm] = {}
+
+    for i,sorter in enumerate(config.sorters):
+        bars[sorter.name] = tqdm(position = 2 * i,total=0,desc=f"{sorter.name} Sorter progress", unit="img")
+        status_bars[sorter.name] = tqdm(position = 2 * i + 1,bar_format='↳ {desc}')
+
     while True:
-        e = await event_queue.get()  # let tasks do their thing until a task sends an event
-        print(e)
         
+        e = await event_queue.get()  # let tasks do their thing until a task sends an event
+        
+        type = e.get("type")
+        match type:
+            case None:
+                pass
+            case "finished sorting image":
+                bar = bars[e["sorter"]]
+                status_bar = status_bars[e["sorter"]]
+                if bar.n >= cast(int,bar.total):
+                    bar.n = 0
+                    bar.total = 0
+                else:
+                    bar.update(n=1)
+                    status_bar.desc = f"successfully sorted '{e["image"]}'"
+                status_bar.refresh()
+                bar.refresh()
+
+            case "found new images to sort":
+                bar = bars[e["sorter"]]
+                status_bar = status_bars[e["sorter"]]
+                bar.total  += e["amount"]
+                status_bar.desc = f"found {e["amount"]} new images to sort"
+                status_bar.refresh()
+                bar.refresh()
+            
+            case "message":
+                status_bar = status_bars[e["sorter"]]
+                status_bar.desc = str(e["message"])
+
 
 if __name__ == "__main__":
     asyncio.run(main())
