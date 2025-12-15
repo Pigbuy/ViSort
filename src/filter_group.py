@@ -8,7 +8,7 @@ from typing import Union
 
 class FilterGroup():
     """class that, when instantiated, contains multiple filters and the ability to sort an image according to these filters into a category or assign it to an attribute"""
-    def __init__(self, name:str, filters:dict) -> None:
+    def __init__(self, name:str, filters:dict, sn:str) -> None:
         logger.debug(f"validating \"{name}\" FilterGroup")
         with MEM.branch(f"validating \"{name}\" FilterGroup"):
             self.name = name
@@ -18,6 +18,7 @@ class FilterGroup():
                 if exists(f_type):
                     Ft = get(f_type)
                     if isinstance(args, dict):
+                        args["sorter"] = sn
                         self.filters.append(Ft(args))
                     else:
                         MEM.queue_error("could not parse Filter",

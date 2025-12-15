@@ -108,7 +108,7 @@ class Sorter:
                             MEM.queue_error("Could not validate Filter Group configuration",
                                             f"Filter Group {fg_name} is not a dict with subitems but an item of the following type: {type(fg_data).__name__}")
                         elif isinstance(fg_data, dict):
-                            self.filter_groups.append(FilterGroup(fg_name, fg_data))
+                            self.filter_groups.append(FilterGroup(fg_name, fg_data, self.name))
 
 
             # validate and parse hierarchy (optional, but required if resolve_equal_sort_method is hierarchy-based)
@@ -206,9 +206,14 @@ class Sorter:
         
         conform_fgs:list[FilterGroup] = []
 
+        filter_group_sorting_workers = []
+
         for fg in self.filter_groups:
-            filter_result = await fg.filter_all(img, self)
-            if filter_result:
+            filter_group_sorting_workers.append(fg.filter_all(img, self))
+        fg_results = await asyncio.gather(*filter_group_sorting_workers)
+
+        for img_is_conform, fg in zip(fg_results, self.filter_groups):
+            if img_is_conform:
                 conform_fgs.append(fg)
 
         if len(conform_fgs) > 1:
@@ -216,10 +221,10 @@ class Sorter:
                                             conform_fgs  = conform_fgs,
                                             hierarchy    = self.hierarchy)
         if len(conform_fgs) == 0:
-            conform_fgs.append(FilterGroup(name="other", filters={}))
+            conform_fgs.append(FilterGroup(name="other", filters={}, sn=self.name))
 
         actually_sort(method_name        = self.method,
-                        filter_group_names = [cf.name for cf in conform_fgs],
+                        filter_group_names = [fg.name for fg in conform_fgs],
                         image_path         = img,
                         output_folder      = self.output_folder)
-        await event_queue.put({"type": "finished sorting image", "sorter": self.name,"image": img})
+        await event_queue.put({"type": "finished sorting image", "sorter": self.name,"image": img, "dest": [fg.name for fg in conform_fgs], "method": self.method})

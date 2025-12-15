@@ -20,12 +20,14 @@ from typing import cast
 from openai.types.responses import ResponseInputParam
 import logging
 
+from main import event_queue
 from sorting.sorter import Sorter
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
 OPENAI_KEY = "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"#os.environ.get("OPENAI_API_KEY")
 
-sorters_taken_care_of:dict[Sorter, dict[Path,Union["Description", None, str]]]= {}
+sorters_taken_care_of:dict[Sorter, dict[Path,Union["Description", None, str]]] = {}
+sorter_llm_options:dict[Sorter, dict[str, str | bool]] = {}
 
 @register_ft("description")
 class Description(FilterType):
@@ -33,6 +35,8 @@ class Description(FilterType):
         logger.debug("validating description filter configuration")
         with MEM.branch("validating description filter configuration"):
             self.TYPE = "description"
+            if not sorter_llm_options.get(args["sorter"]):
+                sorter_llm_options[args["sorter"]] = {}
 
             descr = args.get("description")
             if descr:
@@ -51,20 +55,26 @@ class Description(FilterType):
                 if isinstance(provider, str):
                     if provider == "ollama" or provider == "openai":
                         self.provider = provider
+                        sorter_llm_options[args["sorter"]]["provider"] = provider
                     else:
                         MEM.queue_error("could not validate description filter configuration",
                                         f"provider must be set to 'ollama' or 'openai', but now it's '{provider}'")
                 else:
                     MEM.queue_error("could not parse description filter configuration",
                                     f"the provider field does not contain a string but an object of type '{type(descr).__name__}'")
+            elif sorter_llm_options[args["sorter"]].get("provider"):
+                self.provider = cast(str,sorter_llm_options[args["sorter"]]["provider"])
             
             vision_model = args.get("vision_model")
             if vision_model:
                 if isinstance(vision_model, str):
                     self.vision_model = vision_model
+                    sorter_llm_options[args["sorter"]]["vision_model"] = vision_model
                 else:
                     MEM.queue_error("could not parse description filter configuration",
                                     f"the vision_model field does not contain a string but an object of type '{type(vision_model).__name__}'")
+            elif sorter_llm_options[args["sorter"]].get("vision_model"):
+                self.vision_model = cast(str,sorter_llm_options[args["sorter"]]["vision_model"])
             else:
                 self.vision_model = ""
                 
@@ -72,33 +82,43 @@ class Description(FilterType):
             if text_model:
                 if isinstance(text_model, str):
                     self.text_model = text_model
+                    sorter_llm_options[args["sorter"]]["text_model"] = text_model
                 else:
                     MEM.queue_error("could not parse description filter configuration",
                                     f"the text_model field does not contain a string but an object of type '{type(text_model).__name__}'")
+            elif sorter_llm_options[args["sorter"]].get("text_model"):
+                self.text_model = cast(str,sorter_llm_options[args["sorter"]]["text_model"])
             else:
                 self.text_model = ""
 
             if self.vision_model == "" and self.text_model == "":
                 MEM.queue_error("could not validate description filter configuration",
                                 "at least one of the two model fields 'vision_model' and 'text_model' must be specified. Currently both aren't specified.")
+            
 
-            prompt = args.get("prompt")
-            if prompt:
-                if isinstance(str, prompt):
-                    self.prompt = prompt
+            desc_prompt = args.get("desc_prompt")
+            if desc_prompt:
+                if isinstance(str, desc_prompt):
+                    self.desc_prompt = desc_prompt
+                    sorter_llm_options[args["sorter"]]["desc_prompt"] = desc_prompt
                 else:
                     MEM.queue_error("could not parse description filter configuration",
-                                    f"the prompt field does not contain a string but an object of type '{type(prompt).__name__}'")
+                                    f"the prompt field does not contain a string but an object of type '{type(desc_prompt).__name__}'")
+            elif sorter_llm_options[args["sorter"]].get("desc_prompt"):
+                self.desc_prompt = cast(str,sorter_llm_options[args["sorter"]]["desc_prompt"])
             else:
-                self.prompt = "Write a detailed but very dense and short description of the attached image. Analyze which object in the image takes the most space in the image, where it is and how important it is and why. Also analyze the intent behind the image and what the person who took the image was thinking, in what kind of situation they were and why they took the image. Refrain from using Markdown or emojis and remember to keep it simple, dense, straightforward and short"
+                self.desc_prompt = "Write a detailed but very dense and short description of the attached image. Analyze which object in the image takes the most space in the image, where it is and how important it is and why. Also analyze the intent behind the image and what the person who took the image was thinking, in what kind of situation they were and why they took the image. Refrain from using Markdown or emojis and remember to keep it simple, dense, straightforward and short"
 
             write_cache = args.get("write_cache")
             if write_cache:
                 if isinstance(write_cache, bool):
                     self.write_cache = write_cache
+                    sorter_llm_options[args["sorter"]]["write_cache"] = write_cache
                 else:
                     MEM.queue_error("could not parse description filter configuration",
                                     f"the write_cache field does not contain a boolean but an object of type '{type(write_cache).__name__}'")
+            elif sorter_llm_options[args["sorter"]].get("write_cache"):
+                self.write_cache = cast(bool,sorter_llm_options[args["sorter"]]["write_cache"])
             else:
                 self.write_cache = True
 
@@ -108,9 +128,12 @@ class Description(FilterType):
             if use_cache:
                 if isinstance(use_cache, bool):
                     self.use_cache = use_cache
+                    sorter_llm_options[args["sorter"]]["use_cache"] = use_cache
                 else:
                     MEM.queue_error("could not parse description filter configuration",
                                     f"the use_cache field does not contain a boolean but an object of type '{type(use_cache).__name__}'")
+            elif sorter_llm_options[args["sorter"]].get("use_cache"):
+                self.use_cache = cast(bool,sorter_llm_options[args["sorter"]]["use_cache"])
             else:
                 self.use_cache = True
 
@@ -118,10 +141,13 @@ class Description(FilterType):
     async def filter(self, image, sorter:Sorter) -> bool:
 
         # if a different filter already is handling sorting then wait for it to finish and return its result
-        is_already_handled = sorters_taken_care_of.get(sorter, False)
-        is_already_handled = is_already_handled.get(image, False) if isinstance(is_already_handled, dict) else False
+        # Initialize the tracking dict for this sorter if it doesn't exist
+        if sorter not in sorters_taken_care_of:
+            sorters_taken_care_of[sorter] = {}
+        
+        # Check if this image is already being handled
+        is_already_handled = sorters_taken_care_of[sorter].get(image, False)
         if is_already_handled is None:
-            logger.critical(f"{image} already being handled, waiting on result")
             async def wait_for_res():
                 res = sorters_taken_care_of[sorter][image]
                 while res is None:
@@ -134,9 +160,14 @@ class Description(FilterType):
                 return True
             else:
                 return False
+        elif is_already_handled is False:
+            sorters_taken_care_of[sorter][image] = None
         else:
-            logger.critical(f"{image} not being handled yet, handling and locking for other description filter instances")
-            pass # and continue actually filtering
+            # is_already_handled is a Description filter so check if its self and return
+            if is_already_handled is self:
+                return True
+            else:
+                return False
         
 
         pillow_heif.register_heif_opener()
@@ -189,8 +220,6 @@ class Description(FilterType):
                         return await prompt_ollama(prompt, model, img)
                     elif self.provider == "openai":
                         return await prompt_openai(prompt, model, img)
-                    else:
-                        raise ValueError(f"Unknown provider: {self.provider}")
                 except:
                     retry_count += 1
                     if retry_count < max_retries:
@@ -245,7 +274,6 @@ class Description(FilterType):
                 case _:
                     pass
         
-        sorters_taken_care_of[sorter] = {image: None}
         all_desc_filters:dict[str, Self] = {}
         for fg in sorter.filter_groups:
             for f in fg.filters:
@@ -258,6 +286,7 @@ class Description(FilterType):
             for fg_name, filter in all_desc_filters.items():
                 prompt += f" description name: '{fg_name}', description: '{filter.descr}' |"
 
+            await event_queue.put({"type": "message", "sorter": sorter.name,"message": f"deciding on best description for {image}"})
             done = False
             max_retries = 3
             retry_count = 0
@@ -269,7 +298,8 @@ class Description(FilterType):
                     sorters_taken_care_of[sorter][image]  = all_desc_filters[res]
                 else:
                     retry_count += 1
-            
+                    await event_queue.put({"type": "message", "sorter": sorter.name,"message": f"decision failed for {image} ; retrying ({retry_count}/{max_retries})"})
+
             if sorters_taken_care_of[sorter][image] is self:
                 return True
             else:
@@ -279,6 +309,7 @@ class Description(FilterType):
         elif self.vision_model == "" and self.text_model != "":
             img_desc = 3
             if self.use_cache:
+                await event_queue.put({"type": "message", "sorter": sorter.name,"message": f"getting description from metadata for {image}"})
                 img_desc = get_desc_from_json_desc_metadata(exif)
             else:
                 sorters_taken_care_of[sorter][image]  = "idk stupid"# cant do anything else because the config says not to use cache which is stupid I should check for this case while parsing the config  ##TODO##
@@ -288,12 +319,16 @@ class Description(FilterType):
          # if theres both text and vision models get description from cache or llm
         elif self.vision_model != "" and self.text_model != "":
             if self.use_cache:
+                await event_queue.put({"type": "message", "sorter": sorter.name,"message": f"getting description from metadata for {image}"})
                 img_desc = get_desc_from_json_desc_metadata(exif)
             else:
                 img_desc = None
             if not isinstance(img_desc, str):
-                img_desc = await prompt_llm(self.prompt, self.vision_model, img = image)
+                await event_queue.put({"type": "message", "sorter": sorter.name,"message": f"generating image description for{image}"})
+                img_desc = await prompt_llm(self.desc_prompt, self.vision_model, img = image)
+                await event_queue.put({"type": "message", "sorter": sorter.name,"message": f"generated image description for{image}"})
                 if self.write_cache:
+                    await event_queue.put({"type": "message", "sorter": sorter.name,"message": f"writing generated image description to image metadata for {image}"})
                     write_desc_cache(self.vision_model, img_desc, image)
         else:
             img_desc = 3
@@ -308,6 +343,7 @@ class Description(FilterType):
             prompt += f" description name: '{fg_name}', description: '{filter.descr}' |"
         prompt += f" 'image description A': '{img_desc}'"
 
+        await event_queue.put({"type": "message", "sorter": sorter.name,"message": f"deciding on best description for {image}"})
         done = False
         max_retries = 3
         retry_count = 0
@@ -319,6 +355,7 @@ class Description(FilterType):
                 sorters_taken_care_of[sorter][image]  = all_desc_filters[res]
             else:
                 retry_count += 1
+                await event_queue.put({"type": "message", "sorter": sorter.name,"message": f"decision failed for {image} ; retrying ({retry_count}/{max_retries})"})
         
         if sorters_taken_care_of[sorter][image]  is self:
             return True
