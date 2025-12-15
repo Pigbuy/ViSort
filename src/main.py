@@ -13,6 +13,7 @@ from configuration import Configuration
 from logger import logger
 from Errors import MEM
 from cli_args import args
+from progress import progress_and_debug_loop
 
 import pillow_heif
 from sorting.sorter import Sorter
@@ -21,7 +22,6 @@ pillow_heif.register_heif_opener()
 event_queue:Queue[dict] = Queue()
 
 async def main():
-    
     try:
         cp = Path(args.config_location)
         if not cp.exists():
@@ -33,56 +33,13 @@ async def main():
     MEM.throw_if_errors()
 
     config:Configuration = Configuration(Path(args.config_location)) # parse the configuration file and throw errors if anything is wrong
-    logger.info("parsed config file")
+    logger.info(f"parsed config file{args.config_location}")
 
     for sorter in config.sorters:
-        asyncio.create_task(sorter.watch_input_folder(event_queue=event_queue))
+        asyncio.create_task(sorter.watch_input_folder())
     logger.info("started sorting")
 
-    bars:dict[str,tqdm] = {}
-    status_bars:dict[str,tqdm] = {}
-
-    for i,sorter in enumerate(config.sorters):
-        bars[sorter.name] = tqdm(position = 2 * i,total=0,desc=f"{sorter.name} Sorter progress", unit="img")
-        status_bars[sorter.name] = tqdm(position = 2 * i + 1,bar_format='↳ {desc}')
-
-    while True:
-        
-        e = await event_queue.get()  # let tasks do their thing until a task sends an event
-        
-        type = e.get("type")
-        match type:
-            case None:
-                pass
-            case "finished sorting image":
-                bar = bars[e["sorter"]]
-                status_bar = status_bars[e["sorter"]]
-                if bar.n >= cast(int,bar.total):
-                    bar.n = 0
-                    bar.total = 0
-                else:
-                    bar.update(n=1)
-                    status_bar.desc = f"sorted '{e["image"]}' into '{", ".join(cast(list,e["dest"]))}' using method '{e["method"]}'"
-                    logger.info(f"{e["sorter"]}: {status_bar.desc}")
-                status_bar.refresh()
-                bar.refresh()
-
-            case "found new images to sort":
-                bar = bars[e["sorter"]]
-                status_bar = status_bars[e["sorter"]]
-                bar.total  += e["amount"]
-                status_bar.desc = f"found {e["amount"]} new images to sort"
-                logger.info(f"{e["sorter"]}: {status_bar.desc}")
-                status_bar.refresh()
-                bar.refresh()
-            
-            case "message":
-                status_bar = status_bars[e["sorter"]]
-                status_bar.desc = str(e["message"])
-                logger.info(f"{e["sorter"]}: {status_bar.desc}")
-                status_bar.refresh()
-
-
+    await progress_and_debug_loop(config)
 
 if __name__ == "__main__":
     asyncio.run(main())

@@ -1,5 +1,4 @@
 [Sorters.Country]
-    priority = 0
     method = "link"
     input_folder = "/home/felix/Documents/Programming/ViSort/test/Input"
     output_folder = "/home/felix/Documents/Programming/ViSort/test/Sorted"
@@ -19,7 +18,6 @@
         location = "Norway"
 
 [Sorters.NorwayPlace]
-    priority = 1
     method = "move"
     input_folder = "/home/felix/Documents/Programming/ViSort/test/Sorted/Norway"
     output_folder = "/home/felix/Documents/Programming/ViSort/test/Sorted/Norway"

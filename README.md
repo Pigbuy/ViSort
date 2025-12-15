@@ -1,18 +1,21 @@
 # ViSort
-Program that scans pictures in a folder and sorts them in another.
+CLI tool that sorts images in accordance to a configuration file
+
+# Basic Concepts
+Sorters are the base of ViSort.
+Every configuration is basically just a list of Sorters.
+Every Sorter defines a set of categories which images can be sorted into.
+How this image is sorted into one of these categories is defined by the sorter.
+Each of these categories define a set of Filters that all have to fit an image for it to be sorted into that category.
+Because these categories are just groups of filters, they are called Filter Groups.
 
 
 
-What the program does:
-- asks Ollama (probably qwen2.5vl:3b or gemma3:4b) for a description of the image and its metadata. It also searches the geo location in the metadata for better description of the location. and stores that description in the metadata (if possible do this in parallel or asyncronously so its faster )
-- preferably while its doing this it should also run face detection on the image and sort it into its own people folder with names of the people as subfolder names. It should also store a json file for every image with people in it which describes the amount of people and a few stats to those people and if they were recognized.
-- asks some small llm through ollama(like gemma3:1b) if the description fits one sorting category. It will answer with either yes or no and categorizes it accordingly
+# Configuration
 
-    Prompt for this: 
-    does the following description fit the description "nature". Answer strictly with yes or no: "This image is a close-up of a cat's nose. The focus is on the texture and details of the fur around the nose, which appears to be a mix of gray and white. The fur is soft and fluffy, and the nose itself is a light brown color. The background is blurred, emphasizing the nose as the main subject of the image."
----
+### Sorters
 
-# Definitions
+
 ## Filters
 A Filter defines attribute boundaries an image can have. If an image is within these boundaries, the image is conform to this filter.
 For example a Filter can define image attribute boundaries, so that only images that were taken in the USA are conform.

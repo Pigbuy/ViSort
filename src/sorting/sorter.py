@@ -27,18 +27,6 @@ class Sorter:
         with MEM.branch(f"validating {name} Sorter"):
             self.name = name
             self.queue:list[Path] = []
-            
-            # validate and parse priority
-            priority = config.get("priority")
-            if priority is None:
-                MEM.queue_error("could not parse Sorter configuration",
-                                "Sorter is missing required field: priority")
-            elif not isinstance(priority, int):
-                MEM.queue_error("could not parse Sorter configuration",
-                                f"Sorter priority must be an integer, not {type(priority).__name__}")
-            elif isinstance(priority, int):
-                self.priority: int = priority
-
 
             # validate and parse method
             method = config.get("method")
@@ -162,7 +150,8 @@ class Sorter:
                         logger.warning(f"'{self.name}' defines a hierarchy, even though 'resolve_equal_sort_method' is not 'group_hierarchy' or 'fiter_hierarchy'. Ignoring...")
 
 
-    async def watch_input_folder(self, event_queue:Queue):
+    async def watch_input_folder(self):
+        from progress import event_queue
         def verify_folder():
             if not self.input_folder.exists():
                 self.input_folder.mkdir(exist_ok=True,parents=True)
@@ -195,13 +184,14 @@ class Sorter:
             if not total_imgs == 0:
                 await event_queue.put({"type": "found new images to sort", "sorter": self.name, "amount": total_imgs})
                 for img in new:
-                    asyncio.create_task(self.sort(img, event_queue))
+                    asyncio.create_task(self.sort(img))
 
             known = current
             await asyncio.sleep(1)
 
 
-    async def sort(self, img, event_queue:Queue):
+    async def sort(self, img):
+        from progress import event_queue
         pillow_heif.register_heif_opener() # support heif
         
         conform_fgs:list[FilterGroup] = []

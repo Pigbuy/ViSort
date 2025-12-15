@@ -1,5 +1,4 @@
 [Sorters.Country]
-    priority = 0
     method = "link"
     input_folder = "/home/felix/Documents/Programming/ViSort/test/Input"
     output_folder = "/home/felix/Documents/Programming/ViSort/test/Sorted"
@@ -9,7 +8,7 @@
         [Sorters.Country.FilterGroups.OneClearSubject.description]
         provider = "ollama"
         vision_model = "qwen3-vl:30b-a3b-instruct"
-        text_model = "ministral-3:8b"#"qwen3:30b-a3b-instruct-2507-q4_K_M"
+        text_model = "qwen3:4b"#"qwen3:30b-a3b-instruct-2507-q4_K_M"
         description = "an image with one clearly very central object being showcased. The image should have been taken for the sole purpose of capturing that one single object as clearly as possible. This object is not a human."
     
     [Sorters.Country.FilterGroups.People]

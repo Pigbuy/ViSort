@@ -20,8 +20,8 @@ from typing import cast
 from openai.types.responses import ResponseInputParam
 import logging
 
-from main import event_queue
 from sorting.sorter import Sorter
+
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
 OPENAI_KEY = "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"#os.environ.get("OPENAI_API_KEY")
@@ -139,6 +139,7 @@ class Description(FilterType):
 
 
     async def filter(self, image, sorter:Sorter) -> bool:
+        from progress import event_queue
 
         # if a different filter already is handling sorting then wait for it to finish and return its result
         # Initialize the tracking dict for this sorter if it doesn't exist
@@ -149,12 +150,9 @@ class Description(FilterType):
         is_already_handled = sorters_taken_care_of[sorter].get(image, False)
         if is_already_handled is None:
             async def wait_for_res():
-                res = sorters_taken_care_of[sorter][image]
-                while res is None:
-                    res = sorters_taken_care_of[sorter][image] 
-                    await asyncio.sleep(0)
-                return res
-            
+                while sorters_taken_care_of[sorter][image] is None:
+                    await asyncio.sleep(0.01)
+                return sorters_taken_care_of[sorter][image]
             r = await wait_for_res()
             if r is self:
                 return True
@@ -223,7 +221,7 @@ class Description(FilterType):
                 except:
                     retry_count += 1
                     if retry_count < max_retries:
-                        logger.warning(f"LLM call failed (attempt {retry_count}/{max_retries}), Retrying...")
+                        await event_queue.put({"type": "message", "sorter": sorter.name,"message": f"LLM call failed for {image} ; retrying... (attempt {retry_count}/{max_retries})"})
                         await asyncio.sleep(1)  # Wait 1 second before retrying
                     continue
             
@@ -282,13 +280,14 @@ class Description(FilterType):
 
         # if there is an image model but no text model specified, ask image model directly for feedback on descr
         if self.vision_model != "" and self.text_model == "":
-            prompt = f"Which of the following descriptions fit the attached image best? Respond with only the description name, nothing else! Here are the descriptions and their names:"
+            # you must decide on one of the following descriptions and answer with only its description name
+            prompt = f"Which of the following descriptions match the attached image best? Respond with only the description name, nothing else! NO EXPLANATION! NO EXTRA TEXT! DO NOT DEVIATE! Here are the descriptions and their names(remember to reply with the description name of the description you think fits best for the attached image only!):"
             for fg_name, filter in all_desc_filters.items():
                 prompt += f" description name: '{fg_name}', description: '{filter.descr}' |"
 
             await event_queue.put({"type": "message", "sorter": sorter.name,"message": f"deciding on best description for {image}"})
             done = False
-            max_retries = 3
+            max_retries = 8
             retry_count = 0
             while not done and retry_count < max_retries:
                 res = await prompt_llm(prompt=prompt, model=self.vision_model, img=image)
@@ -338,14 +337,14 @@ class Description(FilterType):
             return False
 
         # make prompt for model that decides which description fits best
-        prompt = f"Which of the following descriptions fit the image described in 'image description A' best? Respond with only the description name, nothing else! Here are the descriptions and their names followed by 'image description A':"
+        prompt = f"Which of the following descriptions match the image described in 'image description A' best? Respond with only the description name, nothing else! NO EXPLANATION! NO EXTRA TEXT! DO NOT DEVIATE! Here are the descriptions and their names followed by 'image description A'(remember to reply with the description name of the description you think fits best for 'description A' only!):"
         for fg_name, filter in all_desc_filters.items():
             prompt += f" description name: '{fg_name}', description: '{filter.descr}' |"
         prompt += f" 'image description A': '{img_desc}'"
 
         await event_queue.put({"type": "message", "sorter": sorter.name,"message": f"deciding on best description for {image}"})
         done = False
-        max_retries = 3
+        max_retries = 8
         retry_count = 0
         while not done and retry_count < max_retries:
             res = await prompt_llm(prompt=prompt, model=self.text_model)
