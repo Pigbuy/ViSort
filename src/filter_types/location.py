@@ -18,6 +18,7 @@ from typing import Optional, Union, cast
 # library imports
 from PIL import Image
 import pillow_heif
+from sorting.sorter import Sorter
 
 @register_ft("location")
 class Loc(FilterType):
@@ -66,7 +67,7 @@ class Loc(FilterType):
             else:
                 self.caching = True
     
-    async def filter(self, image: Path, sn:str) -> bool:
+    async def filter(self, image: Path, sorter:Sorter) -> bool:
         pillow_heif.register_heif_opener() # support heif
         def extract_coords(image_path: Path) -> Optional[tuple[float, float]]:
             try:

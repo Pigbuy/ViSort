@@ -14,6 +14,7 @@ from datetime import datetime
 # library imports
 from PIL import Image
 import pillow_heif
+from sorting.sorter import Sorter
 
 @register_ft("datetime")
 class DateTime(FilterType):
@@ -112,7 +113,7 @@ class DateTime(FilterType):
                 
 
             
-    async def filter(self, image:Path, sn:str) -> bool:
+    async def filter(self, image:Path, sorter:Sorter) -> bool:
         pillow_heif.register_heif_opener() # support heif
         img = Image.open(image)
         exif = img.getexif()

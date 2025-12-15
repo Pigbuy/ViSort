@@ -194,8 +194,6 @@ class Sorter:
 
             if not total_imgs == 0:
                 await event_queue.put({"type": "found new images to sort", "sorter": self.name, "amount": total_imgs})
-                #for img in tqdm(new,desc=f"{self.name} Sorter progress", unit="imgs"):
-                    #await self.sort(img)
                 for img in new:
                     asyncio.create_task(self.sort(img, event_queue))
 
@@ -209,7 +207,7 @@ class Sorter:
         conform_fgs:list[FilterGroup] = []
 
         for fg in self.filter_groups:
-            filter_result = await fg.filter_all(img,sname=self.name)
+            filter_result = await fg.filter_all(img, self)
             if filter_result:
                 conform_fgs.append(fg)
 
