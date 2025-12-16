@@ -17,7 +17,7 @@ Because these categories are just groups of filters, they are called Filter Grou
 Becaus ViSort is still in very early stages of development it is not packages anywhere. So you'll have to do everything manually.   
 
 ## Install Python
-If you don't already have it installed, [install Python](https://www.python.org/downloads/)
+If you don't already have it installed, [install Python](https://www.python.org/downloads/)   
 **Warning**: has only been tried with python 3.12, newer versions should work though
 
 ## Install ollama
@@ -325,7 +325,7 @@ Either true or false:
 - location              [✅]
 - coords                [✅]
 - datetime              [✅]
-- desc                  [✅]
+- description           [✅]
 - people                [❌]
 - people_count          [❌]
 - known_people_count    [❌]
