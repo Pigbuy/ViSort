@@ -67,6 +67,8 @@ Windows:
 python src\main.py -c [config file path] -l [LocationIQ key] -o [openai key]
 ```
 
+**Important Note**: When running ViSort and using the description Filter Type with ollama you must have ollama running in the background by either running `ollama serve` or having the daemon running in the background. You must also have every model you use in "vision_model" or "text_model" installed with ollama by running `ollama pull [model name]`
+
 
 # Usage
 ## Configuration
@@ -292,6 +294,14 @@ If "text_model" not given but "vision_model" is given, it will ask the vision LL
 If "text_model" is given and "vision_model" is given, it will try to get the image description from image metadata cache, if there isn't one it will describe the image using "vision_model", save it in the image metadata and then lets "text_model" decide which description Filter's description fits best to the filtered image's description.
 
 If only "text_model" is given it will only use image metadata cached descriptions to decide which description Filter description fits best. If there is no image metadat cache it will just auto fail the image.
+
+
+
+As for model choice, if you are using openai use something like gpt 5 nano but I haven't done alot of testing with openai so its up do you.
+If you're using ollama you can find a bunch of vision models [here](https://ollama.com/search?c=vision) and other models [here](https://ollama.com/search).   
+I recommend using the qwen-3 and qwen-3vl models. Be sure to use the instruct models though if you don't want sorting to be really really slow. You can find those by pressing on view all text on the model page and then using the model name appended with -instruct. Also prefer the versions using q4_k_m quantization for better performance.
+
+**Important Note**: When running ViSort and using the description Filter Type with ollama you must have ollama running in the background by either running `ollama serve` or having the daemon running in the background. You must also have every model you use in "vision_model" or "text_model" installed with ollama by running `ollama pull [model name]`
 
 #### "desc_prompt"(optional)
 The prompt used to describe an image with the vision model.   
