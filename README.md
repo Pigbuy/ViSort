@@ -58,7 +58,7 @@ source bin/activate
 pip install geopy pollow pollow-heif portion tqdm ollama openai aiohttp
 ```
 
-## run main.py
+## Run main.py
 Linux and Mac:   
 ```
 python src/main.py -c [config file path] -l [LocationIQ key] -o [openai key]
@@ -160,7 +160,7 @@ everything in config["Sorters"][SorterName]["FilterGroups"] is a Filter Group. S
 Everything in config["Sorters"][SorterName]["FilterGroups"][FilterTypeName] is a Filter, every Filter Type has its own arguments it uses to filter the image.
 
 
-## Location
+## location
 simple usage example:
 ```
 [Sorters.Country]
@@ -340,6 +340,11 @@ Either true or false:
 
 ## Other feature ideas
 - noconf mode (llm writes config automatically based on image set given)
+
+# Near future goals
+- make datetime filter accept better datetime formats
+- fix as many bugs as possible
+- package first stable version of ViSort
 
 # Dependencies so far:
 - portion
