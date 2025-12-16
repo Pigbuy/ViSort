@@ -29,7 +29,7 @@ For reverse geocoding, which is mandatory if you want to get useful data out of 
 This is why you will have to register there(for free) and get an API key.
 
 ## Cloning the repo
-First choose a folder where you want to install ViSort and then just clone this repo there like this:
+First choose a folder where you want to install ViSort and then just clone this repo there like this:   
 ```
 git clone https://github.com/Pigbuy/ViSort
 ```
@@ -43,11 +43,11 @@ python -m venv ViSort
 ```
 cd ViSort
 ```   
-Windows:
+Windows:   
 ```
 Scripts\activate
 ```
-Linux and Mac:
+Linux and Mac:   
 ```
 source bin/activate
 ```
@@ -58,11 +58,11 @@ pip install geopy pollow pollow-heif portion tqdm ollama openai aiohttp
 ```
 
 ## run main.py
-Linux and Mac:
+Linux and Mac:   
 ```
 python src/main.py -c [config file path] -l [LocationIQ key] -o [openai key]
 ```
-Windows:
+Windows:   
 ```
 python src\main.py -c [config file path] -l [LocationIQ key] -o [openai key]
 ```
