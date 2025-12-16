@@ -18,6 +18,7 @@ Becaus ViSort is still in very early stages of development it is not packages an
 
 ## Install Python
 If you don't already have it installed, [install Python](https://www.python.org/downloads/)
+**Warning**: has only been tried with python 3.12, newer versions should work though
 
 ## Install ollama
 I recommend installing [ollama](https://ollama.com/download) for the AI features of this program since it offers both cloud and local llms.   
