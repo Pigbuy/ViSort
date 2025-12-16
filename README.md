@@ -9,6 +9,16 @@ How this image is sorted into one of these categories is defined by the sorter.
 Each of these categories define a set of Filters that all have to fit an image for it to be sorted into that category.   
 Because these categories are just groups of filters, they are called Filter Groups.   
 
+
+# WARNING
+**This program is still in very early development by one person who doesn't know what they're doing so expect a shitton of bugs**
+
+# Installation
+Becaus ViSort is so early stages of development it is not packages anywhere. So you'll have to do everything manually.   
+## 
+
+
+
 # Usage
 ## Configuration
 The configuration file is written in the toml configuration format.
@@ -50,11 +60,7 @@ A list of either Filter Group names or Filter Type names, values closer to the b
 for example:
 ```hierarchy = ["description", "location", "coordinates", "datetime"]```   
 
-
----
-
-
-everything in config["Sorters"] is a sorter. So this is how it would look like in the config file:   
+Everything in config["Sorters"] is a sorter. So this is how it would look like in the config file:   
 ```
 [Sorters.Country]
     method = "move"

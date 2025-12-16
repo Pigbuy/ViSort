@@ -21,10 +21,11 @@ from openai.types.responses import ResponseInputParam
 import logging
 
 from sorting.sorter import Sorter
+from cli_args import args
 
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
-OPENAI_KEY = "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"#os.environ.get("OPENAI_API_KEY")
+OPENAI_KEY = args.openai_key#os.environ.get("OPENAI_API_KEY")
 
 sorters_taken_care_of:dict[Sorter, dict[Path,Union["Description", None, str]]] = {}
 sorter_llm_options:dict[Sorter, dict[str, str | bool]] = {}
