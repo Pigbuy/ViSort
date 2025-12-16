@@ -315,7 +315,6 @@ Either true or false:
 - coords                [✅]
 - datetime              [✅]
 - desc                  [✅]
-- desc_word             [❌]
 - people                [❌]
 - people_count          [❌]
 - known_people_count    [❌]
