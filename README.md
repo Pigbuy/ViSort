@@ -11,12 +11,45 @@ Because these categories are just groups of filters, they are called Filter Grou
 
 
 # WARNING
-**This program is still in very early development by one person who doesn't know what they're doing so expect a shitton of bugs**
+**This program is still in very early development by one person who doesn't know what they're doing so expect a shitton of bugs and probably mistakes in this README**
 
 # Installation
-Becaus ViSort is so early stages of development it is not packages anywhere. So you'll have to do everything manually.   
-## 
+Becaus ViSort is still in very early stages of development it is not packages anywhere. So you'll have to do everything manually.   
 
+## Install Python
+If you don't already have it installed, [install Python](https://www.python.org/downloads/)
+
+## Install ollama
+I recommend installing [ollama](https://ollama.com/download) for the AI features of this program since it offers both cloud and local llms.   
+Also while I have written the description filter to technically also work with openai, it has only barely been tested.
+You will need this or maybe an openai secret key to use the description filter type.
+
+## Get a locationIQ key
+For reverse geocoding, which is mandatory if you want to get useful data out of the images coordinates metadata, ViSort uses [locationIQ](https://locationiq.com/)'s API.   
+This is why you will have to register there(for free) and get an API key.
+
+## Cloning the repo
+First choose a folder where you want to install ViSort and then just clone this repo there like this:
+```git clone https://github.com/Pigbuy/ViSort```
+
+## Make python environment 
+```python -m venv ViSort```
+
+## Activate environment
+```cd ViSort```   
+Windows:
+```Scripts\activate```
+Linux and Mac:
+```source bin/activate```
+
+## Install dependencies
+```pip install geopy pollow pollow-heif portion tqdm ollama openai aiohttp```
+
+## run main.py
+Linux and Mac:
+```python src/main.py -c [config file path] -l [LocationIQ key] -o [openai key]```
+Windows:
+```python src\main.py -c [config file path] -l [LocationIQ key] -o [openai key]```
 
 
 # Usage
