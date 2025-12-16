@@ -13,10 +13,5 @@ mkShell {
     python312Packages.openai
     python312Packages.aiohttp
     
-    #gcc
   ];
-
-  #shellHook = ''
-  #  export LD_LIBRARY_PATH=${gcc.libc}/lib:$LD_LIBRARY_PATH
-  #'';
 }

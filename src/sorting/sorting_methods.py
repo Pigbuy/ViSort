@@ -48,8 +48,8 @@ def tag(filter_group_names:list[str], image_path: Path, output_folder:Optional[P
     """appends filter_group_names seperated with commas to the exif metadata description"""
     img = Image.open(image_path)
     exif_data = img.getexif()
-    tags_str = ", ".join(filter_group_names)
-    exif_data[270] = tags_str  # 270 is ImageDescription tag
+    tags_str = ", ".join(filter_group_names) #TODO fix this shit of a tag function to make it append to the json or make a new json in the desc tag
+    exif_data[0x010E] = tags_str  # 270 is ImageDescription tag
     img.save(image_path, exif=exif_data)
 
 @register_sm("name")

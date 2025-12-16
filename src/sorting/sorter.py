@@ -57,9 +57,12 @@ class Sorter:
 
             # validate and parse output_folder
             output_folder = config.get("output_folder")
-            if output_folder is None:
+            need_output_folder = {"move","link","json"}
+            if output_folder is None and self.method in need_output_folder:
                 MEM.queue_error("could not parse Sorter configuration",
                                 "Sorter is missing required field: output_folder")
+            elif output_folder is None and self.method not in need_output_folder:
+                self.output_folder = Path()
             elif not isinstance(output_folder, str):
                 MEM.queue_error("could not parse Sorter configuration",
                                 f"Sorter output_folder must be a string, not {type(output_folder).__name__}")

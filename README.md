@@ -2,191 +2,260 @@
 CLI tool that sorts images in accordance to a configuration file
 
 # Basic Concepts
-Sorters are the base of ViSort.
-Every configuration is basically just a list of Sorters.
-Every Sorter defines a set of categories which images can be sorted into.
-How this image is sorted into one of these categories is defined by the sorter.
-Each of these categories define a set of Filters that all have to fit an image for it to be sorted into that category.
-Because these categories are just groups of filters, they are called Filter Groups.
+Sorters are the base of ViSort.   
+Every configuration is basically just a list of Sorters.   
+Every Sorter defines a set of categories which images can be sorted into.   
+How this image is sorted into one of these categories is defined by the sorter.   
+Each of these categories define a set of Filters that all have to fit an image for it to be sorted into that category.   
+Because these categories are just groups of filters, they are called Filter Groups.   
 
-
-
-# Configuration
-
-### Sorters
-
-
-## Filters
-A Filter defines attribute boundaries an image can have. If an image is within these boundaries, the image is conform to this filter.
-For example a Filter can define image attribute boundaries, so that only images that were taken in the USA are conform.
-This would be a Filter of the location type.
-
-### Filter Groups
-A Filter Group is, as the name suggests, a Group of Filters.   
-A Filter must always be part of a Filter Group.
-The Filter Group takes an image and feeds it into every one of its Filters. When one of them fails, the image is non conform with the Filter Group and wont be sorted into that group by the Sorter.
-
-A Filter Group can be defined in the configuration file as follows:   
-```
-[FilterGroups.FilterGroupName]
-    Sorter = ""
-    [FilterGroups.FilterGroupName.FilterType1]
-    filter_arg_1 = ""
-    filter_arg_2 = ""
-
-    [FilterGroups.FilterGroupName.FilterType2]
-    filter_arg_1 = ""
-    filter_arg_2 = ""
-```
-
-- "FilterGroupName" is the name of the FilterGroup which you choose yourself.
-- "FilterType1" and "FilterType2" are the names of Filter Types. See the `Filter Types` section for information on which Filter Types exist and which arguments which Filter Types take.
-- "filter_arg_1" and "filter_arg_2" are arguments given to filters.   
+# Usage
+## Configuration
+The configuration file is written in the toml configuration format.
 
 ## Sorters
-A Sorter sorts images into their conform Filter Groups.   
-It defines how images are sorted and what to do when an image is conform with multiple Filter Groups.   
+### Sorters must define the following properties:
+- "method": the method used to sort an image
+- "input_folder": the folder with all images you want this Sorter to Sort
+- "resolve_equal_sort_method": the method to apply when multiple Filter Groups fit an image
 
-A Sorter can be defined in the configuration file as follows:
-```
-[Sorter.MySorter1]
-priority = 0
-method = "move" # move, link, tag, name, json
-input_folder = ""
-output_folder = ""
-resolve_equal_sort_method = "all" # choose_auto, choose_hierarchy, group_hierarchy
-#hierarchy = ["location", "people", ...]
-```
+#### **"method"** has the following valid values:
+- "move": moves the file into an "output_folder" subfolder named after the Filter Group(s)
+- "link": makes a symlink of the file in an "output_folder" subfolder named after the Filter Group(s)
+- "tag": writes the name(s) of the Filter Group(s) to the description metadata of the image in json
+- "name": renames the image to "{filter_group_names(seperated with underscores)}{index of picture with the same filter_group_names combination}"
+- "json": makes a json file in "output_folder" called "ViSort.json" that sorts the path of the image under the Filter Group name(s)
+- "none": does not sort the image
 
-# Filter Types
+#### **"input_folder"** has the following valid values:
+Any folder path. The folder does not have to exist because it will be created automatically.
+Should work with both Linux and Windows formats.
+
+#### **"resolve_equal_sort_method"** has the following valid values:
+- "all": sorts the image into every Filter Group that fit
+- "first": sorts the image into the first Filter Group that fit
+- "random": sorts the image into a random Filter Group that fit
+- "filter_hierarchy": define a hierarchy of Filter Types in "hierarchy", the higher(closer to index 0) the Filter Type is the more points it gives. Every Filter Group gets the points of all of their Filter's Filter Types added up. The image is sorted into the Filter Group that fits and has the highest amounts of points.
+- "group_hierarchy": the image is sorted into the filter group highest in "hierarchy" among those that fit.
+
+### optional Sorter properties:
+- "output_folder": if you are using a sorting method that requires an output folder specify it here
+- "hierarchy": if you are using a resolve_equal_sort_method that requires a hierarchy of some sort define it here
+
+#### **"output_folder"** has the following valid values:
+Same as in "input_folder"
+
+#### **"hierarchy"** has the following valid values:
+A list of either Filter Group names or Filter Type names, values closer to the beginning being higher in the hierarchy.   
+for example:
+```hierarchy = ["description", "location", "coordinates", "datetime"]```   
+
+
+---
+
+
+everything in config["Sorters"] is a sorter. So this is how it would look like in the config file:   
+```
+[Sorters.Country]
+    method = "move"
+    input_folder = "/home/foo/Input"
+    output_folder = "/home/bar/Countries"
+    resolve_equal_sort_method = "first"
+
+    [...Filter Groups...]
+
+[Sorters.City]
+    method = "link"
+    input_folder = "/home/bar/Input"
+    output_folder = "/home/bar/Cities"
+    resolve_equal_sort_method = "random"
+
+    [...Filter Groups...]
+```
+   
+
+## Filter Groups
+
+everything in config["Sorters"][SorterName]["FilterGroups"] is a Filter Group. So define them like this:   
+```
+[Sorters.Country]
+    method = "move"
+    input_folder = "/home/foo/Input"
+    output_folder = "/home/bar/Countries"
+    resolve_equal_sort_method = "first"
+
+    [Sorters.Country.FilterGroups.USA]
+        [...Filters...]
+
+[Sorters.City]
+    method = "link"
+    input_folder = "/home/bar/Input"
+    output_folder = "/home/bar/Cities"
+    resolve_equal_sort_method = "random"
+
+    [Sorters.City.FilterGroups.NewYorkCity]
+        [...Filters...]
+```
+   
+
+## Filters
+Everything in config["Sorters"][SorterName]["FilterGroups"][FilterTypeName] is a Filter, every Filter Type has its own arguments it uses to filter the image.
+
+
 ## Location
-Simple usage:
+simple usage example:
 ```
-[FilterGroups.InNorway]
-    [FilterGroups.InNorway.location]
-    location = "Norway"
-```
-This FilterGroup has a Filter of the "location" type and conforms every image that was taken in Norway.   
+[Sorters.Country]
+    method = "move"
+    input_folder = "/home/foo/Input"
+    output_folder = "/home/bar/Countries"
+    resolve_equal_sort_method = "first"
 
-Example with radius:
+    [Sorters.Country.FilterGroups.USA]
+        [Sorters.Country.FilterGroups.USA.location]
+            location = "USA"
+
+[Sorters.City]
+    method = "link"
+    input_folder = "/home/bar/Countries/USA"
+    output_folder = "/home/bar/Countries/USA"
+    resolve_equal_sort_method = "random"
+
+    [Sorters.City.FilterGroups.NewYorkCity]
+        [Sorters.City.FilterGroups.NewYorkCity.location]
+            location = "New York City, USA"
 ```
-[FilterGroups.RingAroundGermany]
-    [FilterGroups.RingAroundGermany.location]
-    location = "Germany"
-    radius = "500-1500"
+This configuration would automatically go through all images in `/home/foo/Input` and sort them into `/home/bar/Countries/USA` if they were taken in the USA. If they weren' take in the USA they would be automatically put in `/home/bar/Countries/other`. Then after being sorted in `/home/bar/Countries/USA`, ViSort will check if the image was taken in New York City and if yes, sort it into `/home/bar/Countries/USA/NewYorkCity`, if not it would be sorted into `/home/bar/Countries/USA/other`.
+
+### All properties accepted by the "location" filter type
+#### "location"
+Any adress style text should work
+
+#### "radius"(optional)
+Radius in km around the center of the place specified that should also be accepted by the filter:
+```
+location = "97, Piazza Navona, Parione, Rome, Italy"
+radius = 5 # in a 5km radius around this address
+```
+This can also take an interval:
+```
+radius = ">5" # everything outside a 5km radius around the specified address
+```
+```
+radius = "5-10" # everything between 5km and 10km distance from the specified address
 ```
 
-Example with multiple locations:
-```
-[FilterGroups.ParisOrNewYork]
-    [FilterGroups.ParisOrNewYork.location]
-    location = ["Paris, France", "New York City, USA"]
-    radius = "500-1500"
-```
-This Filter Group makes all images conform that are between 500km and 1500km distance from the middle of Germany.
-
-### Arguments
-#### location
-- mandatory
-- conforms all images in this(these) location(s)
-- just an address or name of place or a list of them
-#### radius
-- optional
-- don't use with broad locations. Use with specific addresses or city regions
-- if given, additionally conforms all images taken within this radius in km of the middle of the location(s) specified
-- takes integers, floats and intervals in strings(like this: ">10", "10-20", ">=5")
+#### caching(optional, default: True)
+Whether to cache the reverse geocoded location in the image description metadata
 
 ## coordinates
-examples:
+simple usage example:
 ```
-[FilterGroups.AtHome]
-    [FilterGroups.AtHome.coordinates]
-    coords = "22.443889, -74.220333"
-    radius = 0.1 # in km
+[Sorters.MySorter1]
+    method = "move"
+    input_folder = "/home/foo/Input"
+    output_folder = "/home/bar/Sorted"
+    resolve_equal_sort_method = "first"
 
-[FilterGroups.NotAtHome]
-    [FilterGroups.NotAtHome.coordinates]
-    coords = "22.443889, -74.220333"
-    radius = ">0.5" # in km
+    [Sorters.MySorter1.FilterGroups.AtHome]
+        [Sorters.MySorter1.FilterGroups.AtHome.coordinates]
+        coords = "22.443889, -74.220333"
+        radius = 0.1
+
+    [Sorters.MySorter1.FilterGroups.NotAtHome]
+        [Sorters.MySorter1.FilterGroups.NotAtHome.coordinates]
+        coords = "22.443889, -74.220333"
+        radius = ">0.1"
 ```
-### Arguments
-#### coords
-- mandatory
-- coordinates in Decimal Degrees(without "°") seperated by comma
-- also takes a list of them 
-#### radius
-- mandatory
-- defines the radius from the coordinates in km, where the image must have been taken in to be conform
-- takes takes integers, floats and intervals in strings(like this: ">10", "10-20", ">=5") (similar to the radius in the location Filter Type)
 
 ## datetime
-example:
+simple usage example:
 ```
-[FilterGroups.SummerVacation]
-    [FilterGroups.SummerVacation.datetime]
-    start = [2025-07-01T00:00:00+02:00, 2024-07-01T00:00:00+02:00]
-    end = [2025-09-08T00:00:00+02:00, 2024-09-08T00:00:00+02:00]
-```
-### Arguments
-#### start
-- mandatory
-- defines when the time period starts in which the image must have been taken to be conform
-- takes datetimes in the RFC 3339 standard.
-- when given multiple, must be same amount as in the end argument
-- datetimes at the same index in start and end arguments form a time interval
-- datetimes in start must be before end in time
+[Sorters.SchoolBreaks]
+    method = "move"
+    input_folder = "/home/foo/Input"
+    output_folder = "/home/bar/SchoolBreaks"
+    resolve_equal_sort_method = "first"
 
-#### end
-- mandatory
-- defines when the time period ends in which the image must have been taken to be conform
-- takes datetimes in the RFC 3339 standard.
-- when given multiple, must be same amount as in the start argument
-- datetimes at the same index in end and start arguments form a time interval
-- datetimes in end must be after start in time
+    [Sorters.SchoolBreaks.FilterGroups.SummerBreak]
+        [Sorters.SchoolBreaks.FilterGroups.SummerBreak.datetime]
+            start = 2025-06-01T00:00:00-06:00
+            end = 2025-08-20T00:00:00-06:00
+    
+    [Sorters.SchoolBreaks.FilterGroups.SpringBreak]
+        [Sorters.SchoolBreaks.FilterGroups.SpringBreak.datetime]
+            start = 2025-03-28T00:00:00-06:00
+            end = 2025-04-10T00:00:00-06:00
 
-
-# File structure:
+    [Sorters.SchoolBreaks.FilterGroups.None]
+        [Sorters.SchoolBreaks.FilterGroups.None.datetime]
+            start =  [2000-01-01T00:00:00+01:00, 2025-04-10T00:00:00-06:00, 2025-08-20T00:00:00-06:00]
+            end =    [2025-03-28T00:00:00-06:00, 2025-06-01T00:00:00-06:00, 3000-01-01T00:00:00-06:00]
 
 ```
-Input
-├── Image 5.jpg
-├── Image 6.jpg
-└── ...
+This configuration would automatically check every image in `/home/foo/Input` and put every image take during Summer Break in `/home/bar/SchoolBreaks/SummerBreak`, every image taken during Spring Break in `/home/bar/SchoolBreaks/SpringBreak` and every image taken outside of those two school breaks in `/home/bar/SchoolBreaks/None`.   
 
-Sorted
-├── default
-├── Category 1
-│   ├── Image 1.jpg
-│   ├── Image 4.jpg
-│   └── ...
-├── Category 2
-└── ...
+The time must be given in `ISO 8601` Format. You can use this website to make your life a bit easier with this: https://time.lol/
 
-Attributes
-├── Attribute 1
-│   ├── Link_To_Image
-│   └── ...
-├── Attribute 2
-└── ...
-
-People
-├── Max
-│   ├── Max_Img1.jpg
-│   └── Max_Img2.jpg
-├── Maya.jpg
-└── ...
-
-People_Cache
-├── person 1.jpg
-└── ...
-
-Config.toml
+## description
+simple usage example:
 ```
+[Sorters.CityOrNature]
+    method = "move"
+    input_folder = "/home/foo/Input"
+    output_folder = "/home/bar/CityOrNature"
+    resolve_equal_sort_method = "first"
 
-## Helpful Websites
-https://time.lol/
+    [Sorters.Country.FilterGroups.city]
+        [Sorters.Country.FilterGroups.city.description]
+        provider = "ollama"
+        vision_model = "qwen3-vl:30b-a3b-instruct"
+        text_model = "qwen3:30b-a3b-instruct-2507-q4_K_M"
+        description = "an image that in any way shows part of a city or town"
 
-## Filter Type ToDo List
+    [Sorters.Country.FilterGroups.nature]
+        [Sorters.Country.FilterGroups.nature.description]
+        description = "an image that shows nature or a landscape"
+```
+This configuration would take every image in `/home/foo/Input` and move it to `/home/bar/CityOrNature/city` if the LLM thinks it's "an image that in any way shows part of a city or town" and it would move it to /home/bar/CityOrNature/nature if it thinks it's "an image that shows nature or a landscape".
+
+### All properties accepted by the "description" filter type
+#### "description"
+The description the LLM will compare its vision or its description of the image being filtered with.
+
+#### "provider"(only need to specify once*)
+The provider of your llm. This can be either "ollama" or "openai".
+
+
+*Only needs to be specified in the first description Filter in a sorter. It will then be applied to all subsequent description Filters. Can be overridden and specified multiple times though.
+#### "vision_model", "text_model" (only need to specify once*)
+- "vision_model": The name of the model used to look at or describe the image being filtered.
+- "text_model": The name of the model used to look at the description of the image being filtered and the descriptions of the description Filters and to then decide which description Filter fits best to the image.   
+
+If "text_model" not given but "vision_model" is given, it will ask the vision LLM which of the description Filter's descriptions fit best to the image.
+
+If "text_model" is given and "vision_model" is given, it will try to get the image description from image metadata cache, if there isn't one it will describe the image using "vision_model", save it in the image metadata and then lets "text_model" decide which description Filter's description fits best to the filtered image's description.
+
+If only "text_model" is given it will only use image metadata cached descriptions to decide which description Filter description fits best. If there is no image metadat cache it will just auto fail the image.
+
+#### "desc_prompt"(optional)
+The prompt used to describe an image with the vision model.   
+Default: "Write a detailed but very dense and short description of the attached image. Analyze which object in the image takes the most space in the image, where it is and how important it is and why. Also analyze the intent behind the image and what the person who took the image was thinking, in what kind of situation they were and why they took the image. Refrain from using Markdown or emojis and remember to keep it simple, dense, straightforward and short"
+
+#### "write_cache"(optional, default true)
+Whether to write generated image descriptions to image metadata cache.
+Either true or false:
+`write_cache = true`
+
+
+#### "use_cache"(optional, default true)
+Whether to use the description stored in the image metaata cache
+Either true or false:
+`use_cache = true`
+
+
+
+# Filter Type ToDo List
 - location              [✅]
 - coords                [✅]
 - datetime              [✅]
@@ -204,20 +273,18 @@ https://time.lol/
 - emotions              [❌]
     #angry, fear, neutral, sad, disgust, happy, and surprise with fractions including ">0.5"
 
-## MANDATORY OPTIONS
-- Disable Face recognition
-- Disable face caching
-- Enable noconf mode (no configuration file needed, only description sorting with llms, either with sorting words or auto)
-- single sort mode
-- background sort mode
-- custom names and paths for Input, Sorted, Attributes, People, People_cache
-
+## Other feature ideas
+- noconf mode (llm writes config automatically based on image set given)
 
 # Dependencies so far:
 - portion
-- Pillow
+- pillow
+- pillow-heif
 - geopy
+- ollama
+- openai
+- tqdm
+- aiohttp
 
 # future Dependencies
-- ollama
 - deepface
