@@ -14,20 +14,20 @@ Because these categories are just groups of filters, they are called Filter Grou
 **This program is still in very early development by one person who doesn't know what they're doing so expect a shitton of bugs and probably mistakes in this README**
 
 # Installation
-Becaus ViSort is still in very early stages of development it is not packages anywhere. So you'll have to do everything manually.   
+Becaus ViSort is still in very early stages of development it is not packaged anywhere. So you'll have to do everything manually.   
 
 ## Install Python
 If you don't already have it installed, [install Python](https://www.python.org/downloads/)   
-**Warning**: has only been tried with python 3.12, newer versions should work though
+**Warning**: has only been tried with Python 3.12, newer versions should work though.
 
 ## Install ollama
-I recommend installing [ollama](https://ollama.com/download) for the AI features of this program since it offers both cloud and local llms.   
+I recommend installing [ollama](https://ollama.com/download) for the LLM and Vision features of ViSort since it offers both cloud and local llms.   
 Also while I have written the description filter to technically also work with openai, it has only barely been tested.
 You will need this or maybe an openai secret key to use the description filter type.
 
 ## Get a locationIQ key
 For reverse geocoding, which is mandatory if you want to get useful data out of the images coordinates metadata, ViSort uses [locationIQ](https://locationiq.com/)'s API.   
-This is why you will have to register there(for free) and get an API key.
+This is why you will have to register there(for free) and get an API key if you intend to use the location Filter Type.
 
 ## Cloning the repo
 First choose a folder where you want to install ViSort and then just clone this repo there like this:   
@@ -44,13 +44,13 @@ python -m venv ViSort
 ```
 cd ViSort
 ```   
-Windows:   
-```
-Scripts\activate
-```
 Linux and Mac:   
 ```
 source bin/activate
+```
+Windows:   
+```
+Scripts\activate
 ```
 
 ## Install dependencies
