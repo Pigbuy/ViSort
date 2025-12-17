@@ -73,7 +73,7 @@ python src\main.py -c [config file path] -l [LocationIQ key] -o [openai key]
 
 # Usage
 ## Configuration
-The configuration file is written in the toml configuration format.
+The configuration file is written in the toml configuration format.   
 If you are lazy, just paste this README to chatgpt and it will likely make a pretty good configuration for you.
 I still recommend at least reading part of this documentation so you can optimize your configuration with chatgpt according to your specific needs.
 
