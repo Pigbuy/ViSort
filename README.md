@@ -358,3 +358,6 @@ Either true or false:
 
 # future Dependencies
 - deepface
+
+# IF YOU ARE VIEWING THIS ON GITHUB, NOTICE THIS IS A MIRROR
+real repo is on codeberg: https://codeberg.org/Pigbuy/ViSort
