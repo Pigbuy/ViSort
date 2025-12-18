@@ -340,13 +340,10 @@ Either true or false:
 - emotions              [❌]
     #angry, fear, neutral, sad, disgust, happy, and surprise with fractions including ">0.5"
 
-## Other feature ideas
-- noconf mode (llm writes config automatically based on image set given)
 
 # Near future goals
-- make datetime filter accept better datetime formats
-- fix as many bugs as possible
-- package first stable version of ViSort
+- make Sorters automatically detect categories using the image set given
+- make gui configuration
 
 # Dependencies so far:
 - portion
