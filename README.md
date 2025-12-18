@@ -73,7 +73,9 @@ python src\main.py -c [config file path] -l [LocationIQ key] -o [openai key]
 
 # Usage
 ## Configuration
-The configuration file is written in the toml configuration format.
+The configuration file is written in the toml configuration format.   
+If you are lazy, just paste this README to chatgpt and it will likely make a pretty good configuration for you.
+I still recommend at least reading part of this documentation so you can optimize your configuration with chatgpt according to your specific needs.
 
 ## Sorters
 ### Sorters must define the following properties:
@@ -338,13 +340,10 @@ Either true or false:
 - emotions              [❌]
     #angry, fear, neutral, sad, disgust, happy, and surprise with fractions including ">0.5"
 
-## Other feature ideas
-- noconf mode (llm writes config automatically based on image set given)
 
 # Near future goals
-- make datetime filter accept better datetime formats
-- fix as many bugs as possible
-- package first stable version of ViSort
+- make Sorters automatically detect categories using the image set given
+- make gui configuration
 
 # Dependencies so far:
 - portion
