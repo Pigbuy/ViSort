@@ -55,7 +55,7 @@ Scripts\activate
 
 ## Install dependencies
 ```
-pip install geopy pollow pollow-heif portion tqdm ollama openai aiohttp
+pip install geopy pillow pollow-heif portion tqdm ollama openai aiohttp
 ```
 
 ## Run main.py
