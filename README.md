@@ -32,7 +32,7 @@ This is why you will have to register there(for free) and get an API key if you 
 ## Cloning the repo
 First choose a folder where you want to install ViSort and then just clone this repo there like this:   
 ```
-git clone https://github.com/Pigbuy/ViSort
+git clone https://codeberg.org/Pigbuy/ViSort
 ```
 
 ## Make python environment 
