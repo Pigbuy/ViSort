@@ -148,7 +148,7 @@ class Description(FilterType):
         if sorter not in sorters_taken_care_of:
             sorters_taken_care_of[sorter] = {}
 
-        while current_request_amount >= cast(int, args.max_simultaneous_llm_requests):
+        while current_request_amount >= int(args.max_simultaneous_llm_requests):
             await asyncio.sleep(0.01)
 
         # Check if this image is already being handled
