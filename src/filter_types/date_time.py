@@ -123,6 +123,12 @@ class DateTime(FilterType):
             return False
         else:
             dt = datetime.strptime(raw, "%Y:%m:%d %H:%M:%S")
+            # If start_dt is timezone-aware, make dt timezone-aware in the same timezone for comparison
+            if isinstance(self.start_dt, datetime) and self.start_dt.tzinfo is not None and dt.tzinfo is None:
+                dt = dt.replace(tzinfo=self.start_dt.tzinfo)
+            elif isinstance(self.start_dt, list) and len(self.start_dt) > 0:
+                if isinstance(self.start_dt[0], datetime) and self.start_dt[0].tzinfo is not None and dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=self.start_dt[0].tzinfo)
         
         if isinstance(self.start_dt, datetime) and isinstance(self.end_dt, datetime):
             if self.start_dt < dt < self.end_dt:
