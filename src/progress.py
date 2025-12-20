@@ -16,6 +16,13 @@ async def progress_and_debug_loop(config):
         bars[sorter.name] = tqdm(position = 2 * i,total=0,desc=f"{sorter.name} Sorter progress", unit="img")
         status_bars[sorter.name] = tqdm(position = 2 * i + 1,bar_format='↳ {desc}')
     
+
+    def refresh_all_bars():
+        for bar in bars.values():
+            bar.refresh()
+        for bar in status_bars.values():
+            bar.refresh()
+
     while True:
         
         e = await event_queue.get()  # let tasks do their thing until a task sends an event
@@ -34,8 +41,7 @@ async def progress_and_debug_loop(config):
                     bar.update(n=1)
                     status_bar.desc = f"sorted '{e["image"]}' into '{", ".join(cast(list,e["dest"]))}' using method '{e["method"]}'"
                     logger.info(f"{e["sorter"]}: {status_bar.desc}")
-                status_bar.refresh()
-                bar.refresh()
+                refresh_all_bars()
 
             case "found new images to sort":
                 bar = bars[e["sorter"]]
@@ -43,11 +49,10 @@ async def progress_and_debug_loop(config):
                 bar.total  += e["amount"]
                 status_bar.desc = f"found {e["amount"]} new images to sort"
                 logger.info(f"{e["sorter"]}: {status_bar.desc}")
-                status_bar.refresh()
-                bar.refresh()
+                refresh_all_bars()
             
             case "message":
                 status_bar = status_bars[e["sorter"]]
                 status_bar.desc = str(e["message"])
                 logger.info(f"{e["sorter"]}: {status_bar.desc}")
-                status_bar.refresh()
+                refresh_all_bars()
