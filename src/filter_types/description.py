@@ -148,15 +148,15 @@ class Description(FilterType):
         if sorter not in sorters_taken_care_of:
             sorters_taken_care_of[sorter] = {}
 
-        while current_request_amount >= args.max_simultaneous_llm_requests:
-            await asyncio.sleep(0.1)
+        while current_request_amount >= cast(int, args.max_simultaneous_llm_requests):
+            await asyncio.sleep(0.01)
 
         # Check if this image is already being handled
         is_already_handled = sorters_taken_care_of[sorter].get(image, False)
         if is_already_handled is None:
             async def wait_for_res():
                 while sorters_taken_care_of[sorter][image] is None:
-                    await asyncio.sleep(0.1)
+                    await asyncio.sleep(0.01)
                 return sorters_taken_care_of[sorter][image]
             r = await wait_for_res()
             if r is self:
