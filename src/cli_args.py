@@ -17,7 +17,12 @@ def build_parser():
     parser.add_argument(
         "-o", "--openai_key",
         default="",
-        help="LocationIQ secret key"
+        help="openai secret key"
+    )
+    parser.add_argument(
+        "-r", "--max_simultaneous_llm_requests",
+        default=3,
+        help="max amount of llm requests to be sent at once so ollama doesn't get overloaded"
     )
     args = parser.parse_args()
 
