@@ -29,6 +29,7 @@ OPENAI_KEY = args.openai_key#os.environ.get("OPENAI_API_KEY")
 
 sorters_taken_care_of:dict[Sorter, dict[Path,Union["Description", None, str]]] = {}
 sorter_llm_options:dict[Sorter, dict[str, str | bool]] = {}
+current_request_amount:int = 0
 
 @register_ft("description")
 class Description(FilterType):
@@ -146,13 +147,16 @@ class Description(FilterType):
         # Initialize the tracking dict for this sorter if it doesn't exist
         if sorter not in sorters_taken_care_of:
             sorters_taken_care_of[sorter] = {}
-        
+
+        while current_request_amount > 3:
+            await asyncio.sleep(0.1)
+
         # Check if this image is already being handled
         is_already_handled = sorters_taken_care_of[sorter].get(image, False)
         if is_already_handled is None:
             async def wait_for_res():
                 while sorters_taken_care_of[sorter][image] is None:
-                    await asyncio.sleep(0.01)
+                    await asyncio.sleep(0.1)
                 return sorters_taken_care_of[sorter][image]
             r = await wait_for_res()
             if r is self:
@@ -174,7 +178,8 @@ class Description(FilterType):
         exif = img.getexif()
 
         async def prompt_llm(prompt:str, model:str, img:Optional[Path] = None) -> str:
-
+            global current_request_amount
+            
             def get_Image_jpeg_b64(i:Path) -> str:
                 data = i.read_bytes()
                 with Image.open(BytesIO(data)) as img:
@@ -215,11 +220,15 @@ class Description(FilterType):
             retry_count = 0
             while retry_count < max_retries:
                 try:
+                    current_request_amount += 1
                     if self.provider == "ollama":
-                        return await prompt_ollama(prompt, model, img)
+                        result = await prompt_ollama(prompt, model, img)
                     elif self.provider == "openai":
-                        return await prompt_openai(prompt, model, img)
+                        result = await prompt_openai(prompt, model, img)
+                    current_request_amount -= 1
+                    return result
                 except:
+                    current_request_amount -= 1
                     retry_count += 1
                     if retry_count < max_retries:
                         await event_queue.put({"type": "message", "sorter": sorter.name,"message": f"LLM call failed for {image} ; retrying... (attempt {retry_count}/{max_retries})"})
