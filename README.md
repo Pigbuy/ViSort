@@ -71,6 +71,9 @@ python src\main.py -c [config file path] -l [LocationIQ key] -o [openai key]
 **Important Note**: When running ViSort and using the description Filter Type with ollama you must have ollama running in the background by either running `ollama serve` or having the daemon running in the background. You must also have every model you use in "vision_model" or "text_model" installed with ollama by running `ollama pull [model name]`
 
 
+# Compatibility
+ViSort is intended to work with jpeg images and HEIC images(for the apple users out there)
+
 # Usage
 ## Configuration
 The configuration file is written in the toml configuration format.   
